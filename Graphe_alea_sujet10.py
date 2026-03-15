@@ -145,7 +145,7 @@ def pagerank(G,n) :
       x = xnext
       xnext = np.dot(G,x)
 
-      diff = np.max(x - xnext)
+      diff = np.max(np.abs(x - xnext))
 
     return x
 
