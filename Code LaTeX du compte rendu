@@ -7,12 +7,27 @@
 \usepackage{graphicx}
 \usepackage{hyperref}
 \usepackage[a4paper, margin=2.5cm]{geometry}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{titling}
+\setlength{\droptitle}{-2cm}
+
+\lstset{
+language=Python,
+basicstyle=\ttfamily\small,
+keywordstyle=\color{blue},
+commentstyle=\color{gray},
+stringstyle=\color{red},
+showstringspaces=false,
+frame=single
+}
 
 \title{Modélisation du Web et algorithme PageRank}
 \author{Rémi Parrot}
 \date{\today}
 
 \begin{document}
+
 
 \maketitle
 
@@ -48,7 +63,7 @@ Ce projet a pour but de détailler cette modélisation et l'algorithme qui en d�
 On commencera par construire le modèle de graphe orienté et la matrice de transition
 associée au surfeur aléatoire.
 On introduira ensuite la matrice de Google, qui corrige certaines limitations
-du modèle de base — notamment les puits et les composantes déconnectées —
+du modèle de base, notamment les puits et les composantes déconnectées,
 et garantit l'existence d'une distribution stationnaire unique.
 Pour finir, on implémentera le calcul du PageRank en Python et on observera
 son comportement sur des graphes générés aléatoirement.
@@ -131,5 +146,529 @@ Ce modèle présente cependant deux difficultés principales :
 
 Ces problèmes seront résolus dans la section suivante grâce à
 l'introduction de la matrice de Google.
+
+
+\section{La matrice de Google}
+
+\subsection{Principe de la téléportation}
+
+Le modèle précédent, basé uniquement sur la matrice de transition $P$,
+peut poser des problèmes d'existence et d'unicité de la distribution stationnaire.
+Pour y remédier, on introduit un mécanisme dit de téléportation.
+À chaque étape, le surfeur a deux comportements possibles :
+\begin{itemize}
+    \item suit un lien sortant avec probabilité $\alpha$,
+    \item se téléporte vers une page choisie uniformément au hasard avec
+    probabilité $1 - \alpha$.
+\end{itemize}
+Le paramètre $\alpha$ vérifie :
+\[
+0 < \alpha < 1.
+\]
+En pratique, on choisit souvent une valeur proche de $0{,}8$.
+
+\subsection{Définition de la matrice de Google}
+
+On définit la matrice de Google $G$ par :
+\[
+G = \alpha P + \frac{1-\alpha}{n} \mathbf{1},
+\]
+où :
+\begin{itemize}
+    \item $P$ est la matrice de transition,
+    \item $n$ est le nombre de pages,
+    \item $\mathbf{1}$ désigne la matrice dont toutes les entrées valent 1.
+\end{itemize}
+Ce qui revient, entrée par entrée, à écrire :
+\[
+G_{ij} = \alpha P_{ij} + \frac{1-\alpha}{n}.
+\]
+
+\subsection{Propriétés de la matrice \texorpdfstring{$G$}{G}}
+
+La matrice $G$ possède deux propriétés importantes :
+\begin{itemize}
+    \item Toutes ses entrées sont strictement positives.
+    \item La somme des coefficients de chaque colonne vaut 1.
+\end{itemize}
+$G$ est donc une matrice stochastique stricte.
+C'est cette propriété qui garantit l'existence et l'unicité
+d'une distribution stationnaire, comme on le verra dans la section suivante.
+
+\subsection{Interprétation probabiliste}
+
+La matrice $G$ décrit un processus de Markov modélisant la navigation
+d'un internaute aléatoire.
+À chaque étape :
+\begin{itemize}
+    \item avec probabilité $\alpha$, il suit un lien hypertexte,
+    \item avec probabilité $1-\alpha$, il choisit une page uniformément au hasard.
+\end{itemize}
+Ce second comportement, la téléportation, assure que le surfeur peut
+atteindre n'importe quelle page du graphe,
+ce qui élimine les problèmes de réductibilité rencontrés avec $P$ seule.
+
+
+
+
+
+\section{Modélisation par une chaîne de Markov}
+
+Pour modéliser la navigation d'un internaute sur le Web,
+on adopte une interprétation probabiliste du graphe
+en le décrivant comme une chaîne de Markov.
+
+\subsection{Vecteur de probabilité}
+
+On introduit le vecteur :
+\[
+x_k = (x_k^{(1)}, \dots, x_k^{(n)}) \in \mathbb{R}^n
+\]
+où $x_k^{(i)}$ représente la probabilité que le surfeur
+se trouve sur la page $i$ à l'instant $k$.
+Par définition, $x_k$ est un vecteur de probabilité et vérifie :
+\[
+x_k^{(i)} \geq 0 \quad \text{et} \quad \sum_{i=1}^n x_k^{(i)} = 1.
+\]
+
+\subsection{Évolution du système}
+
+La transition d'un instant $k$ à l'instant $k+1$ est gouvernée
+par la matrice de Google $G$, selon la relation :
+\[
+x_{k+1} = G x_k.
+\]
+Cette écriture traduit le fait que la position du surfeur à l'instant $k+1$
+ne dépend que de sa position à l'instant $k$,
+c'est précisément la propriété de Markov.
+
+\subsection{Recherche d'un état stationnaire}
+
+On cherche un vecteur $x^*$ vérifiant :
+\[
+x^* = G x^*.
+\]
+Un tel vecteur est appelé \textit{distribution stationnaire}
+de la chaîne de Markov.
+Il correspond à un régime d'équilibre où la distribution de probabilité
+ne se modifie plus d'une étape à l'autre.
+
+\subsection{Interprétation}
+
+La composante $x^{*(i)}$ a une signification concrète :
+elle représente la proportion du temps que le surfeur passe
+sur la page $i$ lorsque le nombre d'étapes tend vers l'infini.
+Autrement dit, $x^*$ capture la fréquence limite de visite de chaque page.
+Les pages associées aux plus grandes valeurs de $x^{*(i)}$
+sont naturellement considérées comme les plus importantes.
+C'est sur cette idée que repose le classement PageRank.
+
+
+
+\section{Existence et unicité du PageRank}
+
+On cherche un vecteur de probabilité $x \in \mathbb{R}^n$ tel que :
+\[
+Gx = x.
+\]
+Un tel vecteur est appelé vecteur propre associé à la valeur propre 1.
+Il représente la distribution stationnaire du processus de Markov
+défini par la matrice $G$.
+
+\subsection{Propriétés spectrales}
+
+La matrice $G$ vérifie les propriétés suivantes :
+\begin{itemize}
+    \item $G$ est une matrice stochastique par colonnes.
+    \item Toutes ses entrées sont strictement positives.
+\end{itemize}
+Ces deux conditions réunies permettent d'invoquer le théorème de Perron-Frobenius,
+ce qui est précisément l'intérêt de la construction de $G$.
+
+\subsection{Théorème de Perron-Frobenius}
+
+Le théorème de Perron-Frobenius affirme que si une matrice carrée est
+strictement positive, alors :
+\begin{itemize}
+    \item elle admet une valeur propre dominante réelle et positive,
+    \item cette valeur propre est égale à 1 dans le cas d'une matrice stochastique,
+    \item le vecteur propre associé est unique à un facteur multiplicatif près,
+    \item ce vecteur peut être choisi à composantes strictement positives.
+\end{itemize}
+
+\subsection{Conséquence pour le PageRank}
+
+On est donc assuré de l'existence d'un unique vecteur $x^*$ vérifiant :
+\[
+Gx^* = x^*
+\]
+avec :
+\[
+x^*_i \geq 0 \quad \text{et} \quad \sum_{i=1}^{n} x^*_i = 1.
+\]
+
+Ce vecteur correspond à la distribution stationnaire du surfeur aléatoire.
+Autrement dit, à la fréquence limite avec laquelle chaque page est visitée.
+Ses composantes constituent les scores de PageRank.
+
+Ainsi, le problème du classement des pages revient à calculer
+ce vecteur propre associé à la valeur propre 1.
+
+
+
+
+
+\section{Implémentation en Python}
+
+Pour illustrer concrètement le modèle présenté, on a implémenté l'algorithme
+PageRank en Python.
+L'implémentation s'appuie principalement sur \texttt{numpy} pour les calculs
+matriciels et \texttt{networkx} pour la manipulation et la visualisation des graphes.
+
+Dans un premier temps, on travaille avec des matrices pleines, ce qui simplifie
+l'implémentation et permet de mieux suivre chaque étape de l'algorithme.
+La question des matrices creuses, plus réalistes au regard de la structure
+réelle du Web, sera abordée dans un second temps.
+
+\subsection{Structure du programme}
+
+Le programme est organisé en plusieurs fonctions Python correspondant aux
+différentes étapes du calcul du PageRank :
+
+\begin{itemize}
+    \item \texttt{graph\_alea(n)} : génère une matrice d'adjacence aléatoire.
+    \item \texttt{calcul\_P(A,n)} : construit la matrice de transition.
+    \item \texttt{calcul\_G(A,n)} : construit la matrice de Google.
+    \item \texttt{surfer\_alea(n)} : génère un vecteur de probabilité initial.
+    \item \texttt{pagerank(G,n)} : calcule le vecteur PageRank par itération.
+\end{itemize}
+
+Ce découpage permet de suivre clairement les différentes étapes du calcul
+et de séparer l'analyse de la complexité de chaque partie.
+
+\subsection{Génération du graphe}
+
+Le Web est modélisé par une matrice d'adjacence $A \in \{0,1\}^{n \times n}$,
+générée aléatoirement dans notre programme pour simuler un réseau de pages web.
+Chaque coefficient $a_{ij}$ vaut $1$ si la page $j$ possède un lien
+vers la page $i$, et $0$ sinon.
+Cette matrice sert de point de départ pour construire le graphe orienté associé
+et calculer les degrés sortants, nécessaires à l'étape suivante.
+
+La génération de la matrice nécessite de remplir $n^2$ coefficients,
+ce qui donne une complexité en O($n^2$).
+
+\subsection{Construction de la matrice de transition}
+
+À partir de $A$, on construit la matrice de transition $P$ définie par :
+\[
+P_{ij} =
+\begin{cases}
+\dfrac{1}{\deg(j)} & \text{si } j \rightarrow i \\
+0 & \text{sinon}
+\end{cases}
+\]
+où $\deg(j)$ désigne le degré sortant de la page $j$.
+En pratique, ce calcul revient à parcourir les colonnes de $A$
+et à normaliser chacune par la somme de ses entrées non nulles :
+
+\begin{lstlisting}
+def calcul_P(A,n):
+
+    P = np.zeros((n,n))
+
+    for j in range(n):
+
+        deg = np.sum(A[:,j])
+
+        if deg != 0:
+            for i in range(n):
+                if A[i][j] == 1:
+                    P[i][j] = 1/deg
+
+    return P
+\end{lstlisting}
+
+\paragraph{Complexité}
+
+La fonction parcourt l'ensemble des colonnes de la matrice
+et examine leurs coefficients. Deux boucles de taille n,
+le coût total est donc en O($n^2$).
+
+\subsection{Construction de la matrice de Google}
+
+La matrice de Google est ensuite obtenue à partir de $P$ via la formule :
+\[
+G = \alpha P + \frac{1-\alpha}{n}\mathbf{1}.
+\]
+Le paramètre $\alpha$ est fixé à $0{,}8$ dans notre implémentation :
+Il règle l'équilibre entre navigation par liens et téléportation aléatoire.
+
+On l'implémente de cette manière :
+
+\begin{lstlisting}
+def calcul_G(A,n):
+
+    P = calcul_P(A,n)
+    U = np.ones((n,n))
+
+    G = alpha*P + (1-alpha)/n * U
+
+    return G
+\end{lstlisting}
+
+\paragraph{Complexité}
+
+La construction de la matrice nécessite, la construction de P en O($n^2$), celle de U en O($n^2$) aussi, ainsi que des opérations
+sur les $n^2$ coefficients de la matrice.
+Ce qui donne une complexité en O($n^2$) également.
+
+\subsection{Calcul du PageRank}
+
+On construit le vecteur initial $x_0$ en créant un tableau de taille n, rempli d'entier aléatoires entre 0 et 1, que l'on normalise ensuite avec la somme des élément du tableau pour obtenir un vecteur de probabilité. La complexité de \texttt{surfer\_alea(n)} est donc en O(n).
+
+Le vecteur PageRank est ensuite calculé par la méthode d'itération suivante :
+\[
+x_{k+1} = Gx_k.
+\]
+On répète le produit matrice-vecteur jusqu'à convergence.
+Le critère d'arrêt retenu, pour $\varepsilon$ choisi arbitrairement, est :
+\[
+\max_i |x_{k+1,i} - x_{k,i}| < \varepsilon.
+\]
+Cette méthode est simple à mettre en œuvre et converge relativement vite
+en pratique.
+
+L'implémentation Python est la suivante :
+
+\begin{lstlisting}
+def pagerank(G,n):
+
+    x = surfer_alea(n)
+
+    xnext = np.dot(G,x)
+    diff = np.max(np.abs(x - xnext))
+
+    while diff > epsilon:
+
+        x = xnext
+        xnext = np.dot(G,x)
+
+        diff = np.max(np.abs(x - xnext))
+
+    return x
+\end{lstlisting}
+
+\paragraph{Complexité}
+
+Chaque itération correspond à un produit matrice vecteur,
+dont le coût est en O($n^2$), et la boucle est itéré k fois, k étant le nombre d'itérations nécessaires pour atteindre la convergence. La complexité de l'algorithme est donc en O(k$n^2$).
+
+\section{Expériences numériques}
+
+Afin d'étudier le comportement de l'algorithme PageRank,
+nous avons réalisé plusieurs expériences numériques sur
+des graphes générés aléatoirement.
+
+Dans un premier temps, nous utilisons des matrices pleines
+afin de simplifier l'implémentation. L'utilisation de matrices
+creuses, plus adaptées à la structure réelle du Web, sera
+discutée dans la section suivante.
+
+\subsection{Génération d'un graphe aléatoire}
+
+Nous générons une matrice d'adjacence aléatoire
+$A \in \{0,1\}^{n \times n}$.
+
+Dans les expériences suivantes, pour mieux visualiser nous choisissons arbitrairement :
+
+\[
+n = 10\ ;\ \alpha = 0,8\ ;\ \varepsilon = 10^{-16}
+\]
+
+Le graphe orienté correspondant peut être visualisé
+grâce à la bibliothèque \texttt{networkx}.
+
+\begin{figure}[h!]
+
+\centering
+\includegraphics[width=0.7\textwidth]{graphe.png}
+
+\caption{Exemple de graphe orienté généré aléatoirement}
+
+\end{figure}
+
+\subsection{Convergence de l'algorithme}
+
+L'algorithme PageRank repose sur l'itération
+
+\[
+x_{k+1} = Gx_k.
+\]
+
+Nous observons que la suite $(x_k)$ converge rapidement
+vers la distribution stationnaire.
+
+La figure suivante représente l'évolution de l'erreur
+entre deux itérations successives.
+
+\begin{figure}[h!]
+
+\centering
+\includegraphics[width=0.7\textwidth]{convergence.png}
+
+\caption{Convergence de l'algorithme PageRank}
+
+\end{figure}
+
+\subsection{Visualisation des scores PageRank}
+
+Une fois le vecteur PageRank calculé, il est possible
+de visualiser l'importance relative des pages en
+représentant la taille des sommets proportionnellement
+à leur score.
+
+\begin{figure}[h!]
+
+\centering
+\includegraphics[width=0.7\textwidth]{pagerank.png}
+
+\caption{Visualisation du PageRank sur un graphe}
+
+\end{figure}
+
+On observe que certaines pages apparaissent plus
+importantes que d'autres, ce qui correspond aux
+sommets recevant davantage de liens.
+
+
+
+\section{Optimisations}
+
+\subsection{Utilisation de matrices creuses}
+
+Dans l'implémentation précédente, les matrices sont stockées sous forme pleine
+de taille $n \times n$, ce qui représente un coût mémoire de l'ordre de $O(n^2)$.
+Pour de grandes valeurs de $n$, cela devient vite problématique. D'autant plus que, dans un réseau web réel, chaque page ne pointe
+que vers un nombre limité d'autres pages.
+La matrice d'adjacence est donc très majoritairement composée de zéros,
+ce qui rend la représentation pleine inefficace et non réaliste.
+
+En passant à une représentation creuse, seules les entrées non nulles sont stockées.
+Le produit matrice-vecteur de l'itération PageRank ne dépend alors plus de $n^2$,
+mais uniquement du nombre d'arêtes $m$ du graphe.
+La complexité par itération tombe à $O(m)$, et dans notre cas on a bien :
+\[
+m \ll n^2
+\]
+pour de très grandes valeurs de $n$, ce qui permet de réduire considérablement le temps de calcul.
+
+Pour quantifier cet écart, on a mesuré le temps moyen d'exécution
+de l'algorithme pour les deux représentations.
+Pour chaque taille $n = 200, 400, \ldots, 2000$, nous avons généré
+des graphes aléatoires et exécuté l'algorithme $2000$ fois pour
+chaque représentation (dense et creuse). Le temps moyen obtenu
+est représenté sur la figure suivante :
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.7\textwidth]{dense_vs_sparse.png}
+\caption{Comparaison du temps de calcul entre matrices denses et creuses}
+\end{figure}
+
+\subsection{Influence du paramètre \texorpdfstring{$\alpha$}{alpha}}
+
+Le paramètre $\alpha$ contrôle la probabilité que le surfeur suive
+un lien hypertexte plutôt que de se téléporter vers une page aléatoire.
+Il joue un rôle sur deux aspects distincts : le comportement du modèle
+et la vitesse de convergence de l'algorithme.
+
+La figure suivante montre l'évolution de l'erreur $\|x_{k+1} - x_k\|_\infty$
+au fil des itérations, pour différentes valeurs de $\alpha$ et $n = 200$.
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.7\textwidth]{alpha_convergence.png}
+\caption{Influence du paramètre $\alpha$ sur la convergence}
+\end{figure}
+
+Sans grande surprise, les valeurs faibles de $\alpha$ convergent plus vite :
+la téléportation vers une page aléatoire domine, ce qui homogénéise rapidement la distribution.
+À l'inverse, des valeurs proches de $1$ accordent plus de poids à la
+structure du graphe, au prix d'une convergence plus lente.
+En pratique, $\alpha = 0{,}8$ constitue un compromis raisonnable,
+et c'est la valeur couramment retenue.
+
+On s'intéresse maintenant à l'effet de $\alpha$ sur la distribution
+des scores PageRank elle-même.
+Pour cela, on fixe un graphe (plein), de petite taille ($n = 10$)
+et on calcule le vecteur $x^*$ pour plusieurs valeurs de $\alpha$.
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.8\textwidth]{pagerank_alpha_06.png}
+\caption{Distribution du PageRank pour $\alpha = 0{,}6$}
+\end{figure}
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.6\textwidth]{pagerank_alpha_09.png}
+\caption{Distribution du PageRank pour $\alpha = 0{,}9$}
+\end{figure}
+
+Pour $\alpha = 0{,}6$, les scores sont relativement proches les uns des autres,
+ce qui reflète un comportement assez uniforme. La téléportation efface
+en partie les différences de structure.
+Pour $\alpha = 0{,}9$ en revanche, certaines pages se détachent nettement :
+la topologie du graphe reprend le dessus, et les sommets bien connectés
+voient leur score augmenter de façon marquée.
+Le paramètre $\alpha$ agit donc bien comme un curseur entre exploration
+aléatoire et fidélité à la structure des liens.
+
+
+\section{Conclusion}
+
+Le classement de pages web à grande échelle pourrait sembler
+relever avant tout de la puissance de calcul brute.
+Face à un graphe de plusieurs milliards de nœuds, deux stratégies
+s'offrent en effet : augmenter les ressources disponibles,
+ou trouver une modélisation qui rende le problème structurellement
+plus simple.
+PageRank emprunte résolument la seconde voie.
+
+Plutôt que d'analyser localement chaque lien, l'algorithme exploite
+une représentation probabiliste du graphe via les chaînes de Markov.
+Le classement émerge alors d'une propriété globale. La distribution
+stationnaire est capturée par une équation propre, aussi compacte qu'efficace.
+Ce changement de point de vue est, rétrospectivement, ce qui rend
+l'approche aussi élégante que puissante.
+
+Cela dit, la pertinence mathématique ne suffit pas.
+Comme on l'a vu avec la comparaison entre les matrices denses et les matrices creuses,
+le passage à une représentation adaptée à la structure réelle
+du graphe réduit drastiquement le coût de chaque itération,
+de $O(n^2)$ à $O(m)$, ce qui change tout dès que $n$ dépasse
+quelques milliers de pages.
+
+Le paramètre $\alpha$ illustre de son côté un compromis inhérent
+au modèle : donner trop de poids à la téléportation ($\alpha$ faible)
+efface les différences de structure ; trop peu ($\alpha$ proche de $1$)
+ralentit la convergence.
+La valeur $\alpha = 0{,}8$ couramment retenue en pratique n'est pas
+complètement arbitraire. elle reflète un équilibre empiriquement validé.
+
+Le modèle a toutefois ses limites.
+Il repose sur une vision assez schématique du comportement des utilisateurs,
+sans tenir compte du contenu des pages, des requêtes formulées,
+ni des préférences individuelles.
+PageRank constitue une base mathématique solide,
+mais les moteurs de recherche modernes l'ont depuis longtemps
+enrichi de nombreuses autres couches de traitement.
+
+Ce projet aura au moins montré une chose :
+des outils relativement accessibles, tels que les graphes orientés,
+les matrices stochastiques ou encore l'itération de puissance,
+suffisent à traiter un problème d'une complexité réelle, à condition de les combiner avec soin.
+
 
 \end{document}
