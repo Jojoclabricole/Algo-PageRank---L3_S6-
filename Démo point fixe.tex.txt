@@ -1,0 +1,96 @@
+\documentclass{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{amssymb}
+\usepackage{amsmath}
+
+\title{PageRank}
+\author{Ryan WONG-TZE-KIOON}
+\date{May 2026}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+
+\newpage
+Soit $G=(g_{i,j})_{1\leq i,j\leq n} \in M_n(\mathbb{R}_+^*)$ tel que $\textbf{1}^TG=\textbf{1}^T$ ($G$ est stochastique en colonne) où $\textbf{1}$ désigne la matrice ligne de taille $n$ remplie de $1$.
+\\Soit $C = \{x=(x_i)_{1 \leq i \leq n} \in \mathbb{R}^n:\forall i \in[\![1,n]\!],x_i \geq 0$ et $\sum\limits_{i=0}^n x_i = 1\}$ le simplexe de dimension $n-1$.
+\\\\\underline{Théorème du point fixe de Brouwer (version simpliciale) :}\\
+\\L'application $f:$
+$\begin{array}{c}
+     C \longrightarrow C \\
+     x \longmapsto \frac{Gx}{\|Gx\|_1}
+\end{array}$
+admet un point fixe $X \in C$.
+\\\\\underline{Démonstration :}
+\\\\Admise. $\square$
+\\\\D'après le théorème du point fixe de Brouwer, il existe $X=(X_i)_{1\leq i\leq n} \in C$ tel que $\frac{GX}{\|GX\|_1}=X$
+\\Or, $\|GX\|_1=1$ (Théorème des probabilités totales + Somme de probabilités d'événements formant une partition).
+\\Donc, $GX=X$.
+\\$1$ est une valeur propre de $G$.
+\\$X$ est un vecteur propre associé à $1$.
+\\$X$ a forcément une coordonnées non-nulles (somme des coordonnées est $1$ et toute coordonnée $\geq 0$).
+\\Donc, par produit matriciel, $GX > 0$ (le vecteur $GX$ a toutes ses coordonnées $> 0$). Or, $GX=X$. D'où $X > 0$.
+\\\\\underline{Théorème de Perron-Frobenius appliqué à $G$ :}
+\\\\Soit $\lambda \in \mathbb{C}$ une valeur propre de $G$. Alors :
+\\(1) $|\lambda | \leq 1$ ;
+\\(2) $1$ est une valeur propre de G d'ordre 1 ;
+\\(3) $|\lambda |=1 \implies \lambda =1$.
+\\\\\underline{Démonstration :}
+\\\\(1) Soit $\lambda \in \mathbb{C}$ une valeur propre de $G$ et $Y=(Y_i)_{1\leq i\leq n}$ un vecteur propre non-nul associé à $\lambda$ : $GY=\lambda Y$.
+\\Donc, $|GY|=|\lambda Y|=|\lambda|\space|Y|$.
+\\Or, par inégalité triangulaire, $|G|\space|Y|\geq|GY|$ car $|G||Y|=\left(\sum\limits_{j=1}^n |g_{i,j}||Y_j|\right)_{1\leq i\leq n}$ et $|GY|=\left(\Bigg|\sum\limits_{j=1}^n g_{i,j}y_{j}\Bigg|\right)_{1\leq i\leq n}$
+\\\\Puisque $|G|=G$, alors $G\space|Y|\geq|\lambda|\space|Y|$. $(*)$
+\\On note $t=\max\limits_{i \in [\![1,n]\!]}\frac{|Y_i|}{X_i}\geq0$. Pas de problème car $X>0$.
+\\$\forall\space i\in [\![1,n]\!], \frac{|Y_i|}{X_i}\leq\max\limits_{i\in[\![1,n]\!]}\frac{|Y_i|}{X_i}=t$.
+\\Donc $\forall i \in [\![1,n]\!],|Y_i|\leq t\space X_i$. $(**)$
+\\Notons $i_0$ l'indice où le max est atteint. $|Y_{i_0}|=t\space X_{i_0}$. $(***)$
+\\D'après $(**)$, $|Y|\leq tX$.
+\\On applique $G$ à gauche : $G|Y|\leq tGX=tX$.
+\\D'après $(*)$ et la dernière inégalité, on obtient $|\lambda||Y|\leq tX$.
+\\En particulier, pour la $i_0$-ème coordonnée :
+\\$|\lambda||Y_{i_0}|\leq tX_{i_0}$.
+\\Donc $|\lambda||Y_{i_0}|\leq|Y_{i_0}|$ d'après $(***)$.
+\\Si $|Y_{i_0}|\neq 0$ :
+\\Alors $|\lambda|\leq 1$
+\\Si $|Y_{i_0}|=0$ :
+\\Par définition, $i_0$ est l'indice où le max est atteint. Alors :
+\\$\max\limits_{i \in[\![1,n]\!]}\frac{|Y_i|}{X_i}=\frac{|Y_{i_0}|}{X_{i_0}}=0$. Donc $Y=0$. Or par hypothèse, $Y$ n'est pas 0.
+\\\\(2) Soient $X^{(1)}\in C$ et $X^{(2)}\in C$ tels que $GX^{(1)}=X^{(1)}$ et $GX^{(2)}=X^{(2)}$.
+\\C'est-à-dire que $X^{(1)}$ et $X^{(2)}$ sont des vecteurs propres associés à la valeur propre $1$.
+\\On pose $m=\min\limits_{i \in[\![1,n]\!]}\frac{X_i^{(2)}}{X_i^{(1)}}$.
+\\$\forall i\in[\![1,n]\!],\frac{X_i^{(2)}}{X_i^{(1)}}\geq\min\limits_{i \in[\![1,n]\!]}\frac{X_i^{(2)}}{X_i^{(1)}}=m$.
+\\Donc $\forall i\in[\![1,n]\!],X_i^{(2)}-mX_i^{(1)}\geq0$
+\\On note $i_0$ le cas d'égalité. $X_{i_0}^{(2)}-mX_{i_0}^{(1)}=0$.
+\\Et on pose $Z:=X^{(2)}-mX^{(1)}$.
+\\$Z\geq0$ et sa $i_0$-ème coordonnée est nulle.
+\\$GZ=G(X^{(2)}-mX^{(1)})\\GZ=GX^{(2)}-mGX^{(1)}\\GZ=X^{(2)}-mX^{(1)}\\GZ=Z$.
+\\Supposons par l'absurde que Z possède une coordonnée $>0$.
+\\Puisque $G>0$, alors $GZ>0$. Or $GZ=Z$. Donc $Z>0$. Or, c'est absurde car $Z$ possède une coordonnée nulle, la $i_0$-ème.
+\\D'où $Z=0$.
+\\Donc $X^{(2)}=mX^{(1)}$. Donc $\lambda$ est d'ordre 1.
+\\Utilisons le fait que $X^{(2)},X^{(1)}\in C$ et multiplions à gauche par $\textbf{1}^T$ :
+\\$\textbf{1}^TX^{(2)}=m\textbf{1}^TX^{(1)}$.
+\\$1=m\times1$
+\\$m=1$.
+\\D'où $X^{(2)}=X^{(1)}.$ En plus que $\lambda$ est d'ordre 1, si on se place dans le simplexe C, le vecteur propre associé à $1$ est unique.
+\\\\(3) (A compléter)
+\\
+\\\\Soient $\lambda_2,\dots,\lambda_n\in\mathbb{C}$ les valeurs propres de $G$ qui ne sont pas 1. Leur existence est assurée par le théorème de d'Alembert-Gauss (éventuellement certaines sont identiques). Et nous savons qu'il y en a $n-1$ par le (2) du théorème de Perron-Frobenius.
+\\Notons $v_2,\dots,v_n$ leur vecteur propre associé (bien sûr, si $\lambda_k=\lambda_l$, on prendra $v_k$ et $v_l$ non colinéaires ($k\neq l)$).
+\\Rappelons aussi que $1$ est valeur propre, de vecteur propre $X$.
+\\Soit $x \in C$. On décompose $x$ dans la base $(X,v_2,\dots,v_n)$.
+\\$\exists \alpha_1,\dots,\alpha_n\in\mathbb{C},x=\alpha_1X+\sum\limits_{k=2}^n \alpha_kv_k$. $(*)$
+\\Soit $k\in[\![2,n]\!]$.On cherche à calculer $\textbf{1}^Tv_k$.
+\\$Gv_k=\lambda_kv_k$
+\\$\textbf{1}^T(Gv_k)=\textbf{1}^T(\lambda_kv_k)$
+\\$(\textbf{1}^TG)v_k=\lambda_k\textbf{1}^Tv_k$
+\\$\textbf{1}^Tv_k=\lambda_k\textbf{1}^Tv_k$
+\\$(1-\lambda_k)\textbf{1}^Tv_k=0$
+\\Comme $1-\lambda_k\neq0$, donc $\textbf{1}^Tv_k=0$. $(**)$
+\\On cherche à calculer $\alpha_1$.
+\\$\textbf{1}^Tx=\textbf{1}^T\left(\alpha_1X+\sum\limits_{k=2}^n \alpha_kv_k\right)$
+\\$1=\alpha_1\textbf{1}^TX+\sum\limits_{k=2}^n\alpha_k\textbf{1}^Tv_k$
+\\$1=\alpha_1\times1+\sum\limits_{k=2}^n\alpha_k\times0$ d'après $(**)$.
+\end{document}
