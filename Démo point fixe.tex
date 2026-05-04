@@ -57,4 +57,28 @@ admet un point fixe $X \in C$.
 \\Si $|Y_{i_0}|=0$ :
 \\Par définition, $i_0$ est l'indice où le max est atteint. Alors :
 \\$\max\limits_{i \in[\![1,n]\!]}\frac{|Y_i|}{X_i}=\frac{|Y_{i_0}|}{X_{i_0}}=0$. Donc $Y=0$. Or par hypothèse, $Y$ n'est pas 0.
+\\\\(2) Soient $X^{(1)}\in C$ et $X^{(2)}\in C$ tels que $GX^{(1)}=X^{(1)}$ et $GX^{(2)}=X^{(2)}$.
+\\C'est-à-dire que $X^{(1)}$ et $X^{(2)}$ sont des vecteurs propres associés à la valeur propre $1$.
+\\On pose $m=\min\limits_{i \in[\![1,n]\!]}\frac{X_i^{(2)}}{X_i^{(1)}}$.
+\\$\forall i\in[\![1,n]\!],\frac{X_i^{(2)}}{X_i^{(1)}}\geq\min\limits_{i \in[\![1,n]\!]}\frac{X_i^{(2)}}{X_i^{(1)}}=m$.
+\\Donc $\forall i\in[\![1,n]\!],X_i^{(2)}-mX_i^{(1)}\geq0$
+\\On note $i_0$ le cas d'égalité. $X_{i_0}^{(2)}-mX_{i_0}^{(1)}=0$.
+\\Et on pose $Z:=X^{(2)}-mX^{(1)}$.
+\\$Z\geq0$ et sa $i_0$-ème coordonnée est nulle.
+\\$GZ=G(X^{(2)}-mX^{(1)})\\GZ=GX^{(2)}-mGX^{(1)}\\GZ=X^{(2)}-mX^{(1)}\\GZ=Z$.
+\\Supposons par l'absurde que Z possède une coordonnée $>0$.
+\\Puisque $G>0$, alors $GZ>0$. Or $GZ=Z$. Donc $Z>0$. Or, c'est absurde car $Z$ possède une coordonnée nulle, la $i_0$-ème.
+\\D'où $Z=0$.
+\\Donc $X^{(2)}=mX^{(1)}$. Donc $\lambda$ est d'ordre 1.
+\\Utilisons le fait que $X^{(2)},X^{(1)}\in C$ et multiplions à gauche par $\textbf{1}^T$ :
+\\$\textbf{1}^TX^{(2)}=m\textbf{1}^TX^{(1)}$.
+\\$1=m\times1$
+\\$m=1$.
+\\D'où $X^{(2)}=X^{(1)}.$ En plus que $\lambda$ est d'ordre 1, si on se place dans le simplexe C, le vecteur propre associé à $1$ est unique.
+\\\\(3) (A compléter)
+\\
+\\\\Soient $\lambda_2,\dots,\lambda_n\in\mathbb{C}$ les valeurs propres de $G$ qui ne sont pas 1. Leur existence est assurée par le théorème de d'Alembert-Gauss (éventuellement certaines sont identiques). Et nous savons qu'il y en a $n-1$ par le (2) du théorème de Perron-Frobenius.
+\\Notons $v_2,\dots,v_n$ leur vecteur propre associé (bien sûr, si $\lambda_k=\lambda_l$, on prendra $v_k$ et $v_l$ non colinéaires ($k\neq l)$).
+\\Rappelons aussi que $1$ est valeur propre, de vecteur propre $X$.
+\\Soit 
 \end{document}
