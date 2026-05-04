@@ -1,0 +1,60 @@
+\documentclass{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{amssymb}
+\usepackage{amsmath}
+
+\title{PageRank}
+\author{Ryan WONG-TZE-KIOON}
+\date{May 2026}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+
+\newpage
+Soit $G=(g_{i,j})_{1\leq i,j\leq n} \in M_n(\mathbb{R}_+^*)$ tel que $\textbf{1}^TG=\textbf{1}^T$ ($G$ est stochastique en colonne) où $\textbf{1}$ désigne la matrice ligne de taille $n$ remplie de $1$.
+\\Soit $C = \{x=(x_i)_{1 \leq i \leq n} \in \mathbb{R}^n:\forall i \in[\![1,n]\!],x_i \geq 0$ et $\sum\limits_{i=0}^n x_i = 1\}$ le simplexe de dimension $n-1$.
+\\\\\underline{Théorème du point fixe de Brouwer (version simpliciale) :}\\
+\\L'application $f:$
+$\begin{array}{c}
+     C \longrightarrow C \\
+     x \longmapsto \frac{Gx}{\|Gx\|_1}
+\end{array}$
+admet un point fixe $X \in C$.
+\\\\\underline{Démonstration :}
+\\\\Admise. $\square$
+\\\\D'après le théorème du point fixe de Brouwer, il existe $X=(X_i)_{1\leq i\leq n} \in C$ tel que $\frac{GX}{\|GX\|_1}=X$
+\\Or, $\|GX\|_1=1$ (Théorème des probabilités totales + Somme de probabilités d'événements formant une partition).
+\\Donc, $GX=X$.
+\\$1$ est une valeur propre de $G$.
+\\$X$ est un vecteur propre associé à $1$.
+\\$X$ a forcément une coordonnées non-nulles (somme des coordonnées est $1$ et toute coordonnée $\geq 0$).
+\\Donc, par produit matriciel, $GX > 0$ (le vecteur $GX$ a toutes ses coordonnées $> 0$). Or, $GX=X$. D'où $X > 0$.
+\\\\\underline{Théorème de Perron-Frobenius appliqué à $G$ :}
+\\\\Soit $\lambda \in \mathbb{C}$ une valeur propre de $G$. Alors :
+\\(1) $|\lambda | \leq 1$ ;
+\\(2) $1$ est une valeur propre de G d'ordre 1 ;
+\\(3) $|\lambda |=1 \implies \lambda =1$.
+\\\\\underline{Démonstration :}
+\\\\(1) Soit $\lambda \in \mathbb{C}$ une valeur propre de $G$ et $Y=(Y_i)_{1\leq i\leq n}$ un vecteur propre non-nul associé à $\lambda$ : $GY=\lambda Y$.
+\\Donc, $|GY|=|\lambda Y|=|\lambda|\space|Y|$.
+\\Or, par inégalité triangulaire, $|G|\space|Y|\geq|GY|$ car $|G||Y|=\left(\sum\limits_{j=1}^n |g_{i,j}||Y_j|\right)_{1\leq i\leq n}$ et $|GY|=\left(\Bigg|\sum\limits_{j=1}^n g_{i,j}y_{j}\Bigg|\right)_{1\leq i\leq n}$
+\\\\Puisque $|G|=G$, alors $G\space|Y|\geq|\lambda|\space|Y|$. $(*)$
+\\On note $t=\max\limits_{i \in [\![1,n]\!]}\frac{|Y_i|}{X_i}\geq0$. Pas de problème car $X>0$.
+\\$\forall\space i\in [\![1,n]\!], \frac{|Y_i|}{X_i}\leq\max\limits_{i\in[\![1,n]\!]}\frac{|Y_i|}{X_i}=t$.
+\\Donc $\forall i \in [\![1,n]\!],|Y_i|\leq t\space X_i$. $(**)$
+\\Notons $i_0$ l'indice où le max est atteint. $|Y_{i_0}|=t\space X_{i_0}$. $(***)$
+\\D'après $(**)$, $|Y|\leq tX$.
+\\On applique $G$ à gauche : $G|Y|\leq tGX=tX$.
+\\D'après $(*)$ et la dernière inégalité, on obtient $|\lambda||Y|\leq tX$.
+\\En particulier, pour la $i_0$-ème coordonnée :
+\\$|\lambda||Y_{i_0}|\leq tX_{i_0}$.
+\\Donc $|\lambda||Y_{i_0}|\leq|Y_{i_0}|$ d'après $(***)$.
+\\Si $|Y_{i_0}|\neq 0$ :
+\\Alors $|\lambda|\leq 1$
+\\Si $|Y_{i_0}|=0$ :
+\\Par définition, $i_0$ est l'indice où le max est atteint. Alors :
+\\$\max\limits_{i \in[\![1,n]\!]}\frac{|Y_i|}{X_i}=\frac{|Y_{i_0}|}{X_{i_0}}=0$. Donc $Y=0$. Or par hypothèse, $Y$ n'est pas 0.
+\end{document}
