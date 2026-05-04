@@ -273,10 +273,9 @@ if __name__ == "__main__":
     main()
 
 """
-# On vérifie que G est bien une matrice de transition stochastique (somme des colonnes égale à 1)
+# On peut vérifier que G est bien une matrice de transition stochastique :
 print("Somme des colonnes de G :")
 print(G.sum(axis=0))
-
 
 proba = pagerank(G,n,x)
 
@@ -284,8 +283,4 @@ print("\nVecteur PageRank :")
 print(proba)
 
 print("\nSomme :", proba.sum())
-
-
-
-#convergence_alpha(A,n)
 """
