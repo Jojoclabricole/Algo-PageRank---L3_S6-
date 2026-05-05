@@ -15,10 +15,6 @@ def graph_alea(n) :
     """
 
     A = np.random.randint(2, size = (n,n))
-    
-    #Uniquement pour les petits graphes, sinon ça prend trop de temps à afficher.
-    #G = mat_to_graph(A,n)
-    #affiche_graph(G)
 
     return A
 
@@ -104,7 +100,7 @@ def calcul_G(A,n,alpha) :
 
         G = αP + (1-α)/n * U
 
-    où U est la matrice de téléportation.
+    où (1-α)/n * U est la matrice de téléportation.
 
     Complexité :
     O(n^2)
@@ -120,7 +116,7 @@ def calcul_G(A,n,alpha) :
 
 
 
-def pagerank(G,n,x) :
+def pagerank(A,n,x,alpha) :
     """
     Calcule le vecteur PageRank par itération :
 
@@ -136,6 +132,8 @@ def pagerank(G,n,x) :
     où k est le nombre d'itérations nécessaires
     pour atteindre la convergence.
     """
+    
+    G = calcul_G(A,n,alpha)
 
     xnext = np.dot(G,x)
     erreurs = []
@@ -153,18 +151,14 @@ def pagerank(G,n,x) :
     
     return xnext, erreurs
 
-def draw_pagerank(A,n,alpha,f):
+def draw_pagerank(A,n,x,alpha,f):
     """
     Utilise l'algorithme de PageRank et le graphe obtenu avec des tailles de nœuds proportionnelles au PageRank.
     """
 
     Ggraph = mat_to_graph(A,n)
 
-    G = calcul_G(A,n,alpha)
-
-    x = surfer_alea(n)
-
-    scores, _ = pagerank(G,n,x)
+    scores, _ = pagerank(A,n,x,alpha)
 
     sizes = 5000*scores
 
@@ -230,7 +224,7 @@ def main():
     # -----------------------------
     for a in alpha_values:
         filename = f"pagerank_alpha_{int(a*100)}.png"
-        draw_pagerank(A, n, a, filename)
+        draw_pagerank(A, n, x0, a, filename)
 
     # -----------------------------
     # Étude de convergence
