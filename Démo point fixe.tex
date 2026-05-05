@@ -16,6 +16,8 @@
 \newpage
 Soit $G=(g_{i,j})_{1\leq i,j\leq n} \in M_n(\mathbb{R}_+^*)$ tel que $\textbf{1}^TG=\textbf{1}^T$ ($G$ est stochastique en colonne) où $\textbf{1}$ désigne la matrice ligne de taille $n$ remplie de $1$.
 \\Soit $C = \{x=(x_i)_{1 \leq i \leq n} \in \mathbb{R}^n:\forall i \in[\![1,n]\!],x_i \geq 0$ et $\sum\limits_{i=0}^n x_i = 1\}$ le simplexe de dimension $n-1$.
+\\Le but de cette partie est de démontrer que :
+\\$\forall G\in M_n(\mathbb{R}_+^*)$ tel que $\textbf{1}^TG=\textbf{1}^T,\exists!X\in C,\forall x\in C,\lim\limits_{N\to\infty}G^Nx=X$.
 \\\\\underline{Théorème du point fixe de Brouwer (version simpliciale) :}\\
 \\L'application $f:$
 $\begin{array}{c}
@@ -80,5 +82,28 @@ admet un point fixe $X \in C$.
 \\\\Soient $\lambda_2,\dots,\lambda_n\in\mathbb{C}$ les valeurs propres de $G$ qui ne sont pas 1. Leur existence est assurée par le théorème de d'Alembert-Gauss (éventuellement certaines sont identiques). Et nous savons qu'il y en a $n-1$ par le (2) du théorème de Perron-Frobenius.
 \\Notons $v_2,\dots,v_n$ leur vecteur propre associé (bien sûr, si $\lambda_k=\lambda_l$, on prendra $v_k$ et $v_l$ non colinéaires ($k\neq l)$).
 \\Rappelons aussi que $1$ est valeur propre, de vecteur propre $X$.
-\\Soit 
+\\Soit $x \in C$. On décompose $x$ dans la base $(X,v_2,\dots,v_n)$.
+\\$\exists \alpha_1,\dots,\alpha_n\in\mathbb{C},x=\alpha_1X+\sum\limits_{k=2}^n \alpha_kv_k$. $(*)$
+\\Soit $k\in[\![2,n]\!]$.On cherche à calculer $\textbf{1}^Tv_k$.
+\\$Gv_k=\lambda_kv_k$
+\\$\textbf{1}^T(Gv_k)=\textbf{1}^T(\lambda_kv_k)$
+\\$(\textbf{1}^TG)v_k=\lambda_k\textbf{1}^Tv_k$
+\\$\textbf{1}^Tv_k=\lambda_k\textbf{1}^Tv_k$
+\\$(1-\lambda_k)\textbf{1}^Tv_k=0$
+\\Comme $1-\lambda_k\neq0$, donc $\textbf{1}^Tv_k=0$. $(**)$
+\\On cherche à calculer $\alpha_1$.
+\\$\textbf{1}^Tx=\textbf{1}^T\left(\alpha_1X+\sum\limits_{k=2}^n \alpha_kv_k\right)$
+\\$1=\alpha_1\textbf{1}^TX+\sum\limits_{k=2}^n\alpha_k\textbf{1}^Tv_k$
+\\$1=\alpha_1\times1+\sum\limits_{k=2}^n\alpha_k\times0$ d'après $(**)$.
+\\D'où $\alpha_1=1$.
+\\$(*)$ devient $x=X+\sum\limits_{k=2}^n \alpha_kv_k$.
+\\On applique $G$ $N$ fois.
+\\$G^Nx=G^N\left(X+\sum\limits_{k=2}^n \alpha_kv_k\right)$
+\\$G^Nx=G^NX+\left(\sum\limits_{k=2}^n \alpha_kG^Nv_k\right)$
+\\$G^Nx=1^NX+\left(\sum\limits_{k=2}^n \alpha_k\lambda_k^Nv_k\right)$
+\\Or, d'après (1) et (3) du théorème de Perron-Frobenius, $\forall k\in[\![2,n]\!],|\lambda_k|<1$.
+\\On passe à la limite.
+\\$\lim\limits_{N\to\infty}G^Nx=X$.
+\\On rappelle que X est unique, nous l'avons démontré à la fin du (2) du théorème de Perron-Frobenius.
+\\Conclusion : le point fixe ne dépend pas du vecteur d'état de départ $x$. Il ne dépend que de la matrice $G$.
 \end{document}
