@@ -5,6 +5,23 @@ import matplotlib.pyplot as plt
 epsilon = 1e-16
 
 
+
+def graph_alea(n) :
+    """
+    Génère une matrice d'adjacence aléatoire.
+
+    Complexité :
+    O(n^2) pour générer la matrice.
+    """
+
+    A = np.random.randint(2, size = (n,n))
+    
+    #Uniquement pour les petits graphes, sinon ça prend trop de temps à afficher.
+    #G = mat_to_graph(A,n)
+    #affiche_graph(G)
+
+    return A
+
 def mat_to_graph(A,n) :
     """
     Convertit une matrice d'adjacence A en graphe orienté NetworkX.
@@ -24,6 +41,19 @@ def mat_to_graph(A,n) :
 
     return G
 
+def surfer_alea(n):
+    """
+    Génère un vecteur de probabilité aléatoire
+    représentant la position initiale du surfer.
+
+    Complexité :
+    O(n)
+    """
+
+    x = np.random.rand(n)
+    x = x / x.sum()
+
+    return x
 
 def affiche_graph(G) :
     """
@@ -38,23 +68,6 @@ def affiche_graph(G) :
     plt.show()
     print(G)
     return
-
-
-def graph_alea(n) :
-    """
-    Génère une matrice d'adjacence aléatoire.
-
-    Complexité :
-    O(n^2) pour générer la matrice.
-    """
-
-    A = np.random.randint(2, size = (n,n))
-    
-    #Uniquement pour les petits graphes, sinon ça prend trop de temps à afficher.
-    #G = mat_to_graph(A,n)
-    #affiche_graph(G)
-
-    return A
 
 
 def calcul_P(A,n) :
@@ -105,19 +118,6 @@ def calcul_G(A,n,alpha) :
     return G
 
 
-def surfer_alea(n):
-    """
-    Génère un vecteur de probabilité aléatoire
-    représentant la position initiale du surfer.
-
-    Complexité :
-    O(n)
-    """
-
-    x = np.random.rand(n)
-    x = x / x.sum()
-
-    return x
 
 
 def pagerank(G,n,x) :
@@ -138,9 +138,7 @@ def pagerank(G,n,x) :
     """
 
     xnext = np.dot(G,x)
-
     erreurs = []
-    i = 0
 
     diff = np.max(np.abs(x - xnext))
     erreurs.append(diff)
@@ -152,23 +150,8 @@ def pagerank(G,n,x) :
 
       diff = np.max(np.abs(x - xnext))
       erreurs.append(diff)
-      i += 1
     
-    """
-    plt.plot(erreurs)
-    plt.xlabel("Iteration")
-    plt.ylabel("Erreur")
-    plt.savefig("convergence.png")
-    plt.close()
-
-    print("convergence atteinte après", i, "itérations")
-
-    affiche le graphe de la convergence de l'algorithme de PageRank, pour évaluer la rapidité de convergence en fonction de alpha et epsilon.
-    """
-    
-    
-
-    return x
+    return xnext, erreurs
 
 def draw_pagerank(A,n,alpha,f):
     """
@@ -181,7 +164,7 @@ def draw_pagerank(A,n,alpha,f):
 
     x = surfer_alea(n)
 
-    scores = pagerank(G,n,x)
+    scores, _ = pagerank(G,n,x)
 
     sizes = 5000*scores
 
@@ -211,20 +194,7 @@ def convergence_alpha(A,n,x):
 
         G = calcul_G(A,n,a)
 
-        erreurs = []
-        diff = 1
-
-        x_local = x_copy.copy()
-
-        while diff > epsilon:
-
-            xnext = np.dot(G,x_local)
-            diff = np.max(np.abs(x_local-xnext))
-
-            erreurs.append(max(diff, 1e-16))  # sécurité log
-
-            x_local = xnext
-
+        _, erreurs = pagerank(G,n,x_copy)
         plt.semilogy(erreurs,label=f"alpha={a}")
 
     plt.xlabel("Iteration")
@@ -244,7 +214,7 @@ def main():
     # Paramètres
     # -----------------------------
     n = 10
-    alpha_values = [0.6, 0.9]
+    alpha_values = [0.85]
 
     # -----------------------------
     # Génération des données
@@ -271,16 +241,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-"""
-# On peut vérifier que G est bien une matrice de transition stochastique :
-print("Somme des colonnes de G :")
-print(G.sum(axis=0))
-
-proba = pagerank(G,n,x)
-
-print("\nVecteur PageRank :")
-print(proba)
-
-print("\nSomme :", proba.sum())
-"""
