@@ -39,15 +39,14 @@ def mat_to_graph(A,n) :
 
 def surfer_alea(n):
     """
-    Génère un vecteur de probabilité aléatoire
+    Génère un vecteur de probabilité uniforme
     représentant la position initiale du surfer.
 
     Complexité :
     O(n)
     """
 
-    x = np.random.rand(n)
-    x = x / x.sum()
+    x = np.ones(n) / n
 
     return x
 
