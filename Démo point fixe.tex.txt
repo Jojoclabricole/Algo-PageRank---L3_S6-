@@ -14,9 +14,13 @@
 
 \section{Introduction}
 \newpage
-Soit $P\in \mathcal{M}_n(\mathbb{R}_+)$ tel que $\mathds{1}^TG=\mathds{1}^T$ où $\mathds{1}$ désigne la matrice colonne de taille $n$ remplie de $1$. P est une matrice stochastique en colonne.
-\\$G := \alpha P + \frac{(1-\alpha)}{n}\mathds{1}$ où $0<\alpha<1$.
-\\Ainsi, $G\in\mathcal{M}_n(\mathbb{R}_+^*)$ et $\mathds{1}^TG=\mathds{1}^T$.
+Soit $P\in \mathcal{M}_n(\mathbb{R}_+)$ tel que $P$ est stochastique en colonne, c'est-à-dire tel que $\mathds{1}^TP=\mathds{1}^T$ où $\mathds{1}$ désigne la matrice colonne de taille $n$ remplie de $1$.
+\\$G := \alpha P + \frac{(1-\alpha)}{n}\mathds{1}\mathds{1}^T$ où $0<\alpha<1$.
+\\Ainsi, $G\in\mathcal{M}_n(\mathbb{R}_+^*)$ et $G$ est stochastique en colonne :
+\\$\mathds{1}^TG=\mathds{1}^T(\alpha P+\frac{1-\alpha}{n}\mathds{1}\mathds{1}^T)$
+\\$\mathds{1}^TG=\alpha\mathds{1}^TP+\frac{1-\alpha}{n}(\mathds{1}^T\mathds{1})\mathds{1}^T$
+\\$\mathds{1}^TG=\alpha\mathds{1}^T+\frac{1-\alpha}{n}n\mathds{1}^T$
+\\$\mathds{1}^TG=\mathds{1}^T$
 \\On note $C=\Big\{x=(x_i)_{1\leq i\leq n}\in(\mathbb{R}_+)^n:\sum\limits_{i=1}^n x_i=1\Big\}$ le simplexe de dimension $n-1$.
 \\Le but de cette partie est de montrer que :
 \\$\forall G\in\mathcal{M}_n(\mathbb{R}_+^*)$ tel que $\mathds{1}^TG=\mathds{1}^T,\exists!x\in C,\forall X\in C,\lim\limits_{N \to\infty}G^NX=x$.
