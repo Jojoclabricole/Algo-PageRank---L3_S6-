@@ -46,20 +46,23 @@ def surfer_alea(n):
     O(n)
     """
 
-    x = np.ones(n) / n
+    x = np.ones(n) /n
 
     return x
 
-def affiche_graph(G) :
+def affiche_graph(A, f=None) :
     """
     Affiche le graphe.
 
     Complexité : Complexité de la fonction draw : couteuse pour des grandes valeurs de n.
     """
-    pos = nx.spring_layout(G) # Positionnement des nœuds pour une meilleure visualisation. Limite les chevauchements.
+    G = mat_to_graph(A,len(A))
+    pos = nx.spring_layout(G, seed = 42) # Positionnement des nœuds pour une meilleure visualisation. Limite les chevauchements.
+
+    plt.figure("Graphe :")
     nx.draw(G, pos, with_labels=True, node_size=800)
     #ligne suivante pour enregistrer le graphe et l'insérer dans le rapport.
-    #plt.savefig("graphe.png")
+    plt.savefig(f)
     plt.show()
     print(G)
     return
@@ -134,23 +137,23 @@ def pagerank(A,n,x,alpha) :
     
     G = calcul_G(A,n,alpha)
 
-    xnext = np.dot(G,x)
     erreurs = []
 
-    diff = np.max(np.abs(x - xnext))
-    erreurs.append(diff)
+    diff = 1
 
     while diff > epsilon :
     
-      x = xnext
       xnext = np.dot(G,x)
 
       diff = np.max(np.abs(x - xnext))
+
       erreurs.append(diff)
     
+      x = xnext
+
     return xnext, erreurs
 
-def draw_pagerank(A,n,x,alpha,f):
+def draw_pagerank(A,n,x,alpha,f=None):
     """
     Utilise l'algorithme de PageRank et le graphe obtenu avec des tailles de nœuds proportionnelles au PageRank.
     """
@@ -161,7 +164,13 @@ def draw_pagerank(A,n,x,alpha,f):
 
     sizes = 5000*scores
 
+    pos = nx.spring_layout(Ggraph, seed = 42)
+
+    
+
+    plt.figure("Graph pagerank")
     nx.draw(Ggraph,
+            pos,
             with_labels=True,
             node_size=sizes)
 
@@ -179,15 +188,12 @@ def convergence_alpha(A,n,x):
     """
 
     alphas = [0.6,0.7,0.8,0.9,0.95]
-    x_copy = x.copy()
 
     plt.figure()
 
     for a in alphas:
 
-        G = calcul_G(A,n,a)
-
-        _, erreurs = pagerank(G,n,x_copy)
+        _, erreurs = pagerank(A,n,x.copy(),a)
         plt.semilogy(erreurs,label=f"alpha={a}")
 
     plt.xlabel("Iteration")
@@ -206,7 +212,9 @@ def main():
     # -----------------------------
     # Paramètres
     # -----------------------------
-    n = 10
+    n = int(input("Nombre de pages : "))
+    assert n > 0, "Le nombre de pages doit être positif."
+
     alpha_values = [0.85]
 
     # -----------------------------
@@ -218,12 +226,14 @@ def main():
 
     x0 = surfer_alea(n)
 
+    filename1 = f"graphe_n{n}.png"
+    affiche_graph(A, filename1)
     # -----------------------------
     # Visualisation PageRank
     # -----------------------------
     for a in alpha_values:
-        filename = f"pagerank_alpha_{int(a*100)}.png"
-        draw_pagerank(A, n, x0, a, filename)
+        filename2 = f"pagerank_alpha_{int(a*100)}.png"
+        draw_pagerank(A, n, x0, a, filename2)
 
     # -----------------------------
     # Étude de convergence
