@@ -9,16 +9,16 @@ Fonctionnalités :
     Comparaison des performances dense vs creux
 """
 
-from curses import ERR
 import time
+
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
-from scipy.creux import csc_matrix, csr_matrix
+from scipy.sparse import csc_matrix, csr_matrix
 
 
 epsilon = 1e-16
-alpha  = 0.85
+ALPHA_DEFAULT  = 0.85
 
 # Génération de graphes aléatoires
 def graph_alea(n, methode="dense"):
@@ -35,8 +35,8 @@ def graph_alea(n, methode="dense"):
     if methode == "dense":
         A= np.random.randint(2, size=(n, n))
  
-    else
-        d       = int(np.log2(n))   # degré moyen cible
+    else :
+        d       = int(np.log(n))   # degré moyen cible
         p       = d / n             # probabilité binomiale associée
         indptr  = [0]
         indices = []
@@ -69,6 +69,7 @@ def mat_to_graph(A, n, methode="dense"):
     G.add_nodes_from(range(n))
  
     if methode == "creux":
+        A = A.toarray()
  
     for i in range(n):
         for j in range(n):
@@ -80,33 +81,38 @@ def mat_to_graph(A, n, methode="dense"):
 # Vecteur initial du surfer
 def surfer_alea(n):
     """
-    Génère un vecteur de probabilité aléatoire
+    Génère un vecteur de probabilité uniforme
     représentant la position initiale du surfer.
 
     Complexité :
     O(n)
     """
 
-    x = np.random.rand(n)
-    x = x / x.sum()
+    x = np.ones(n) / n
 
     return x
 
 # Affichage du graphe
-def affiche_graph(G) :
+def affiche_graph(A, n, f=None, methode="dense") :
     """
     Affiche le graphe.
 
     Complexité : Complexité de la fonction draw : couteuse pour des grandes valeurs de n.
     """
-    pos = nx.spring_layout(G) # Positionnement des nœuds pour une meilleure visualisation. Limite les chevauchements.
-    nx.draw(G, pos, with_labels=True, node_size=800)
-    #ligne suivante pour enregistrer le graphe et l'insérer dans le rapport.
-    #plt.savefig("graphe.png")
-    plt.show()
-    print(G)
-    return
+    
+    Ggraph = mat_to_graph(A, n, methode)
+    pos = nx.spring_layout(Ggraph, seed = 42) # Positionnement des nœuds pour une meilleure visualisation. Limite les chevauchements.
+     
+    plt.figure("Graphe :")
+    nx.draw(Ggraph, pos, with_labels=True, node_size=500)
 
+    #ligne suivante pour enregistrer le graphe et l'insérer dans le rapport.
+    if f :
+        plt.savefig(f)
+    
+    plt.show()
+
+    return
 
 # Matrice de transition P
 def calcul_P(A, n, methode="dense"):
@@ -176,7 +182,7 @@ def pagerank(A, n, x, methode="dense", alpha=0.85):
     Méthode "creux" : on utilise P.dot(x) donc la complexité est en O(nnz(P) * k) = O(n*log n * k).
     """
 
-    teleport = (1 - alpha) / n
+    teleport = (1.0 - alpha) / n
     erreurs = []
 
     P = calcul_P(A, n, methode)
@@ -203,18 +209,21 @@ def draw_pagerank(A, n, alpha, f=None, methode="dense"):
     """
 
     Ggraph = mat_to_graph(A, n, methode)
-
-    Ggraph = calcul_G(A,n,alpha)
     x0 = surfer_alea(n)
 
     scores, _ = pagerank(A, n, x0, methode, alpha)
+    sizes = 50000*scores
+    pos = nx.spring_layout(Ggraph, seed = 42)
 
-    sizes = 5000*scores
-
-    nx.draw(Ggraph, with_labels=True, node_size=sizes)
+    plt.figure("Graphe avec PageRank :")
+    nx.draw(Ggraph, 
+            pos, 
+            with_labels=True, 
+            node_size=sizes)
 
     if f:
         plt.savefig(f)
+
     plt.show()
     
     return
@@ -255,7 +264,7 @@ def convergence_alpha(A, n, x, alphas=None, methode="dense"):
     return
 
 # Comparaison des performances : dense vs creux
-def comparaison(sizes, essais=100):
+def comparaison(sizes, essais=100, alpha = ALPHA_DEFAULT):
     """
     Mesure et compare les temps d'execution du PageRank dense et creux
     pour differentes tailles de graphe.
@@ -283,12 +292,12 @@ def comparaison(sizes, essais=100):
             # Dense
             start = time.time()
 
-            pagerank(A_dense, n, x.copy(), "dense", alpha = alpha)
+            pagerank(A_dense, n, x.copy(), "dense", alpha)
             td   += time.time() - start
 
             # Creux
             start = time.time()
-            pagerank_creux(A_creux, n, x.copy(), "creux" alpha=alpha)
+            pagerank(A_creux, n, x.copy(), "creux", alpha)
             ts   += time.time() - start
 
         temps_dense.append(td / essais)
@@ -306,23 +315,6 @@ def comparaison(sizes, essais=100):
     plt.show()
     return
 """
-# Tests et programme principal
-
-def main():
-    # -----------------------------
-    # Paramètres
-    # -----------------------------
-    n = 10
-    alpha_values = [0.85]
-
-    # -----------------------------
-    # Génération des données
-    # -----------------------------
-    A = graph_alea(n)
-    print("Matrice d'adjacence :")
-    print(A)
-
-    x0 = surfer_alea(n)
 
     # -----------------------------
     # Visualisation PageRank
@@ -342,49 +334,37 @@ def main():
 
 
 
-# =============================================================================
-# Programme principal - modifier cette section selon l'usage souhaite
-# =============================================================================
+# Programme principal
 
 def main():
 
-    # ------------------------------------------------------------------
     # Paramètres
-    # ------------------------------------------------------------------
-    n      = 10
-    alphas = [0.6, 0.7, 0.8, 0.9, 0.95]
-    """
-    # ------------------------------------------------------------------
-    # Génération
-    # ------------------------------------------------------------------
-    A  = graph_creux(n)
+    n            = int(input("Nombre de pages : "))
+    assert n > 0, "Le nombre de pages doit être positif."
+
+    alpha_values = [0.85]
+    methode = "creux"
     x0 = surfer_alea(n)
-
-    print("Matrice d'adjacence :")
-    print(A)
     
-    # ------------------------------------------------------------------
-    # Visualisation du graphe et du PageRank
-    # ------------------------------------------------------------------
-    affiche_graph(mat_to_graph(A, n))
+    # Génération
+    A  = graph_alea(n, methode)
+    
+    filename1 = f"graphe_n{n}_{methode}.png"
+    affiche_graph(A, n, filename1, methode)
 
-    draw_pagerank(A, n, alpha,
-                  filepath="pagerank_creux.png",
-                  methode="creux")
+    for a in alpha_values:
+        filename2 = f"pagerank_alpha_{int(a*100)}_{methode}.png"
+        draw_pagerank(A, n, a, filename2, methode)
 
-    draw_pagerank(A, n, alpha,
-                  filepath="pagerank_dense.png",
-                  methode="dense")
 
-    # ------------------------------------------------------------------
     # Etude de convergence selon alpha
-    # ------------------------------------------------------------------
-    convergence_alpha(A, n, x0.copy(), alphas=alphas, methode="creux")
-    """
-    # ------------------------------------------------------------------
-    # Comparaison dense vs creux (decommenter pour lancer, couteux en temps)
-    # ------------------------------------------------------------------
-    comparaison(sizes=[200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000], essais=1000)
+
+    convergence_alpha(A, n, x0.copy(), methode=methode)
+    
+    # Comparaison dense vs creux
+    #comparaison(sizes=[200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000], essais=1000)
+
+    return
 
 
 if __name__ == "__main__":
