@@ -566,7 +566,7 @@ pour de très grandes valeurs de $n$, ce qui permet de réduire considérablemen
 Pour quantifier cet écart, on a mesuré le temps moyen d'exécution
 de l'algorithme pour les deux représentations.
 Pour chaque taille $n = 200, 400, \ldots, 2000$, nous avons généré
-des graphes aléatoires et exécuté l'algorithme $2000$ fois pour
+des graphes aléatoires et exécuté l'algorithme $1000$ fois pour
 chaque représentation (dense et creuse). Le temps moyen obtenu
 est représenté sur la figure suivante :
 
