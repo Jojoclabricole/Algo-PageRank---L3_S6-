@@ -69,8 +69,20 @@ On introduira ensuite la matrice de Google, qui corrige certaines limitations
 du modèle de base, notamment les puits et les composantes déconnectées,
 et garantit l'existence d'une distribution stationnaire unique.
 Pour finir, on implémentera le calcul du PageRank en Python et on observera
-son comportement sur des graphes générés aléatoirement.
+son comportement sur des graphes générés aléatoirement.\newline 
 
+Avant que Google ne devienne leader en tant que moteur de recherche, c'est le site \href{https://fr.yahoo.com/}{Yahoo} qui était privilégié pour
+faire des recherchers sur internet. A l'époque, les différents sites étaient regroupés autour d'un sujet commun et ces regroupements 
+étaient gérés entièrement par des humains. L'entreprise Google a privilégié la méthode consistant à classer selon un critère de pertinence
+les différents sites accessibles depuis le web. De plus, via \textit{PageRank}, cet ordre peut se définir automatiquement, sans utiliser 
+de mains d'œuvres humaines, accélérant alors drastiquement le processus. 
+
+Un autre point à considérer est que lorsque Google lance son moteur de recherche dans les années 90, les temps de chargement de pages étaient
+beaucoup plus longs que ce que l'on connaît aujourd'hui. Yahoo avait fait le choix de mettre sur la page d'accueil tout ce qu'un utilisateur
+serait susceptible de vouloir (actualités, météo, mail, etc...). Quant à la page de recherche Google, il n'y avait qu'une simple barre pour
+taper une requête et le logo de l'entreprise. Une recherche via Google sur le web allait assurément plus vite que sur Yahoo. Couplé avec le
+\textit{PageRank} automatisée pour hiérarchiser les sites webs, le moteur de recherche de Google a très vite pris l'ascendant sur le marché pour
+devenir l'incontournable qu'il est aujourd'hui.
 \section{Modélisation du Web}
 
 \subsection{Représentation du Web par un graphe orienté}
