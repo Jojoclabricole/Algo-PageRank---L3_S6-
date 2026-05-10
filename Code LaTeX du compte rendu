@@ -11,6 +11,9 @@
 \usepackage{xcolor}
 \usepackage{titling}
 \setlength{\droptitle}{-2cm}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{dsfont}
 
 \lstset{
 language=Python,
@@ -39,7 +42,7 @@ frame=single
 
 Avec l'essor du Web, les moteurs de recherche sont devenus des outils incontournables
 pour naviguer dans une masse d'information qui ne cesse de croître.
-Le problème, c'est que le nombre de pages indexées est tel qu'il faut bien trouver
+Le problème est que le nombre de pages indexées est tel qu'il faut trouver
 un moyen de les ordonner. Pas seulement par pertinence thématique,
 mais aussi par importance relative.
 C'est précisément ce que propose l'algorithme \textit{PageRank},
@@ -130,9 +133,7 @@ La matrice $P$ vérifie la propriété suivante :
 \sum_{i=1}^{n} P_{ij} = 1
 \]
 
-pour toute colonne $j$ telle que $\deg(j) \neq 0$.
-
-Ainsi, $P$ est une matrice stochastique par colonnes.
+pour toute colonne $j$ telle que $\deg(j) \neq 0$. On dit que $P$ est \textbf{stochastique par colonnes}.
 
 \subsection{Limites du modèle}
 
@@ -271,32 +272,62 @@ On cherche un vecteur de probabilité $x \in \mathbb{R}^n$ tel que :
 \[
 Gx = x.
 \]
-Un tel vecteur est appelé vecteur propre associé à la valeur propre 1.
-Il représente la distribution stationnaire du processus de Markov
-défini par la matrice $G$.
+\subsection{Existence et unicité d'un point fixe}
+Soit $P\in \mathcal{M}_n(\mathbb{R}_+)$ une matrice stochastique en colonne, c'est-à-dire telle que $\mathds{1}^TP=\mathds{1}^T$ où $\mathds{1} = (1)_{n,1}$ (matrice colonne de taille $n$ remplie de $1$).
 
-\subsection{Propriétés spectrales}
+La matrice de Google est : 
+\[
+G := \alpha P + \frac{(1-\alpha)}{n}\mathds{1}\mathds{1}^T 
+\]
+où $0<\alpha<1$. 
 
-La matrice $G$ vérifie les propriétés suivantes :
-\begin{itemize}
-    \item $G$ est une matrice stochastique par colonnes.
-    \item Toutes ses entrées sont strictement positives.
-\end{itemize}
-Ces deux conditions réunies permettent d'invoquer le théorème de Perron-Frobenius,
-ce qui est précisément l'intérêt de la construction de $G$.
+On a $G\in\mathcal{M}_n(\mathbb{R}_+^*)$ et on remarque que $G$ est stochastique en colonne, en effet : 
+\\$\mathds{1}^TG=\mathds{1}^T(\alpha P+\frac{1-\alpha}{n}\mathds{1}\mathds{1}^T)$
+\\$\mathds{1}^TG=\alpha\mathds{1}^TP+\frac{1-\alpha}{n}(\mathds{1}^T\mathds{1})\mathds{1}^T$
+\\$\mathds{1}^TG=\alpha\mathds{1}^T+\frac{1-\alpha}{n}n\mathds{1}^T$
+\\$\mathds{1}^TG=\mathds{1}^T$
 
-\subsection{Théorème de Perron-Frobenius}
+On note $C=\Big\{x=(x_i)_{1\leq i\leq n}\in(\mathbb{R}_+)^n:\sum\limits_{i=1}^n x_i=1\Big\}$ l'ensemble des matrices colonnes stochastiques à valeurs positives. \newline 
 
-Le théorème de Perron-Frobenius affirme que si une matrice carrée est
-strictement positive, alors :
-\begin{itemize}
-    \item elle admet une valeur propre dominante réelle et positive,
-    \item cette valeur propre est égale à 1 dans le cas d'une matrice stochastique,
-    \item le vecteur propre associé est unique à un facteur multiplicatif près,
-    \item ce vecteur peut être choisi à composantes strictement positives.
-\end{itemize}
+%le simplexe de dimension $n-1$.
+% \\Le but de cette partie est de montrer que :
+% \\$\forall G\in\mathcal{M}_n(\mathbb{R}_+^*)$ tel que $\mathds{1}^TG=\mathds{1}^T,\exists!x\in C,\forall X\in C,\lim\limits_{N \to\infty}G^NX=x$.
+% \\La nature du problème nous invite à considérer la convergence au sens de la norme 1. Ce que nous ferons.
+Soient $X,Y\in C$. Puisque $\mathds{1}^TX=\mathds{1}^T$ et $\mathds{1}^TY=\mathds{1}^T$ : 
+\[ 
+    GX-GY=\alpha P(X-Y) (car ).
+\]
+
+Comme $\alpha > 1$, en norme 1 cela donne : 
+\[
+    \|GX-GY\|_1=\alpha\|P(X-Y)\|_1
+\]
+
+Par inégalité triangulaire sur les normes matricielles on a : 
+\[
+\|GX-GY\|_1\leq\alpha\|P\|\|X-Y\|_1 
+\]
+
+où $\|P\|=\max\limits_{x\in C}\|Px\|_1$.
+
+Pour $x$ dans C,\[\|Px\|_1 = \sum_{i = 1}^{n}[Px]_{i,1} = \sum_{i = 1}^{n}\sum_{k = 1}^{n}P_{i,k}x_{k,1} = \sum_{k = 1}^{n}\sum_{i = 1}^{n}P_{i,k}x_{k,1} = \sum_{k = 1}^{n} x_{k,1}\sum_{i = 1}^{n}P_{i,k}\]
+
+Or $P$ est stochastique par colonne donc : \[\forall k \in {1,2,...,n} \hspace{0.2cm} \sum_{i = 1}^{n}P_{i,k} = 1 \]
+
+De plus, puisque $x$ est dans $C$, on a : \[\sum_{k = 1}^{n} x_{k,1}\times 1 = 1\]  
+
+Ainsi,  $\forall x \in C, \|Px\|_1=1$, 
+\\\emph{i.e} $\|P\| = 1$ \newline 
+
+Ainsi : \[ \forall X,Y \in C, \hspace{0.2cm} \|GX-GY\|_1 \leq \alpha\|X-Y\|_1\] 
+
+G est $\alpha$-contractante, or on se trouve sur $\mathbb{R}^{n}$ qui est un espace vectoriel normé complet.  
+Nous pouvons alors appliquer le théorème du point fixe de Banach-Picard qui nous assure l'existence et l'unicité d'un point fixe $x^{*}$. 
+
+
 
 \subsection{Conséquence pour le PageRank}
+
 
 On est donc assuré de l'existence d'un unique vecteur $x^*$ vérifiant :
 \[
@@ -309,10 +340,21 @@ x^*_i \geq 0 \quad \text{et} \quad \sum_{i=1}^{n} x^*_i = 1.
 
 Ce vecteur correspond à la distribution stationnaire du surfeur aléatoire.
 Autrement dit, à la fréquence limite avec laquelle chaque page est visitée.
-Ses composantes constituent les scores de PageRank.
+Ses composantes constituent les scores de PageRank.\newline 
 
-Ainsi, le problème du classement des pages revient à calculer
-ce vecteur propre associé à la valeur propre 1.
+De plus, le théorème de Banach-Picard nous dit qu'en considérant, pour un $x_{0}$ arbitraire, la relation $x_{n+1} = Gx_{n}$, la suite $(x_{n})_{n\in\mathbb{N}}$ converge géométriquement vers $x^{*}$. 
+
+En effet, on peut montrer par récurrence que : 
+\[
+\forall n \in \mathbb{N}, \hspace{0.2cm} \|G^{n}x_{0} - x^{*} \| \leq \alpha^{n}\|x_{0} - x^{*}\|
+\]
+
+Cette convergence permettra informatiquement de mettre en place un algorithme pour trouver cet état stationnaire. On décidera arbitrairement d'un certain $\epsilon$ tel qu'il existera un rang $m$ pour lequel : \[
+\|G^{m}x_{0} - x^{*} \| \leq \epsilon
+\] 
+afin de garantir que l'algorithme finisse. 
+% Ainsi, le problème du classement des pages revient à calculer
+% ce vecteur propre associé à la valeur propre 1.
 
 
 
@@ -494,7 +536,7 @@ grâce à la bibliothèque \texttt{networkx}.
 \centering
 \includegraphics[width=0.7\textwidth]{graphe.png}
 
-\caption{Exemple de graphe orienté généré aléatoirement}
+\caption{Exemple de graphe orienté généré aléatoirement.}
 
 \end{figure}
 
@@ -509,7 +551,7 @@ x_{k+1} = Gx_k.
 Nous observons que la suite $(x_k)$ converge rapidement
 vers la distribution stationnaire.
 
-La figure suivante représente l'évolution de l'erreur
+La figure \ref{convergence_algo} représente l'évolution de l'erreur
 entre deux itérations successives.
 
 \begin{figure}[h!]
@@ -518,7 +560,7 @@ entre deux itérations successives.
 \includegraphics[width=0.7\textwidth]{convergence.png}
 
 \caption{Convergence de l'algorithme PageRank}
-
+\label{convergence_algo}
 \end{figure}
 
 \subsection{Visualisation des scores PageRank}
@@ -533,11 +575,11 @@ représentant la taille des sommets proportionnellement
 \centering
 \includegraphics[width=0.7\textwidth]{pagerank.png}
 
-\caption{Visualisation du PageRank sur un graphe}
-
+\caption{Visualisation du PageRank sur un graphe.}
+\label{visu_pagerank}
 \end{figure}
 
-On observe que certaines pages apparaissent plus
+On observe en figure \ref{visu_pagerank} que certaines pages apparaissent plus
 importantes que d'autres, ce qui correspond aux
 sommets recevant davantage de liens.
 
@@ -573,7 +615,7 @@ est représenté sur la figure suivante :
 \begin{figure}[h!]
 \centering
 \includegraphics[width=0.7\textwidth]{dense_vs_sparse.png}
-\caption{Comparaison du temps de calcul entre matrices denses et creuses}
+\caption{Comparaison du temps de calcul entre matrices denses et creuses.}
 \end{figure}
 
 \subsection{Influence du paramètre \texorpdfstring{$\alpha$}{alpha}}
@@ -589,7 +631,7 @@ au fil des itérations, pour différentes valeurs de $\alpha$ et $n = 200$.
 \begin{figure}[h!]
 \centering
 \includegraphics[width=0.7\textwidth]{alpha_convergence.png}
-\caption{Influence du paramètre $\alpha$ sur la convergence}
+\caption{Influence du paramètre $\alpha$ sur la convergence.}
 \end{figure}
 
 Sans grande surprise, les valeurs faibles de $\alpha$ convergent plus vite :
@@ -607,13 +649,13 @@ et on calcule le vecteur $x^*$ pour plusieurs valeurs de $\alpha$.
 \begin{figure}[h!]
 \centering
 \includegraphics[width=0.8\textwidth]{pagerank_alpha_06.png}
-\caption{Distribution du PageRank pour $\alpha = 0{,}6$}
+\caption{Distribution du PageRank pour $\alpha = 0{,}6$.}
 \end{figure}
 
 \begin{figure}[h!]
 \centering
 \includegraphics[width=0.6\textwidth]{pagerank_alpha_09.png}
-\caption{Distribution du PageRank pour $\alpha = 0{,}9$}
+\caption{Distribution du PageRank pour $\alpha = 0{,}9$.}
 \end{figure}
 
 Pour $\alpha = 0{,}6$, les scores sont relativement proches les uns des autres,
@@ -670,5 +712,16 @@ des outils relativement accessibles, tels que les graphes orientés,
 les matrices stochastiques ou encore l'itération de puissance,
 suffisent à traiter un problème d'une complexité réelle, à condition de les combiner avec soin.
 
+
+
+
+
+% Il existe un unique $x\in C$ tel que $Gx=x$.
+% \\Ainsi $\|G^NX-x\|_1=\|GG^{N-1}X-Gx\|_1$.
+% \\Donc $\|G^NX-x\|_1\leq\alpha\|G^{N-1}X-x\|_1$.
+% \\Par récurrence $\|G^NX-x\|_1\leq\alpha^N\|X-x\|_1$.
+% \\Donc $\|G^N-x\|_1\leq\alpha^N(\|X||_1+\|x\|_1)=2\alpha^N\xrightarrow[N\to\infty]{}0$.
+% \\On conclut que $\lim\limits_{N\to\infty}G^NX=x$.
+% \\Remarque : le point fixe $x$ ne dépend pas du vecteur de probabilité de départ $X$, il dépend seulement de la matrice $G$.
 
 \end{document}
