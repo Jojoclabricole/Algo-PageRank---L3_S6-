@@ -223,7 +223,7 @@ def draw_pagerank(A, n, alpha, f=None, methode="dense"):
     nx.draw(Ggraph, 
             pos, 
             with_labels=True, 
-            font_size=8
+            font_size=8,
             node_size=sizes)
 
     if f:
