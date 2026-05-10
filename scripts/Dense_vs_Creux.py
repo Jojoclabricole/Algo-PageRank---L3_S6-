@@ -104,7 +104,11 @@ def affiche_graph(A, n, f=None, methode="dense") :
     pos = nx.spring_layout(Ggraph, seed = 42) # Positionnement des nœuds pour une meilleure visualisation. Limite les chevauchements.
      
     plt.figure("Graphe :")
-    nx.draw(Ggraph, pos, with_labels=True, node_size=500)
+    nx.draw(Ggraph, 
+            pos, 
+            with_labels=True, 
+            font_size=8,
+            node_size=500)
 
     #ligne suivante pour enregistrer le graphe et l'insérer dans le rapport.
     if f :
@@ -212,13 +216,14 @@ def draw_pagerank(A, n, alpha, f=None, methode="dense"):
     x0 = surfer_alea(n)
 
     scores, _ = pagerank(A, n, x0, methode, alpha)
-    sizes = 50000*scores
+    sizes = 50000*scores /n
     pos = nx.spring_layout(Ggraph, seed = 42)
 
     plt.figure("Graphe avec PageRank :")
     nx.draw(Ggraph, 
             pos, 
             with_labels=True, 
+            font_size=8
             node_size=sizes)
 
     if f:
