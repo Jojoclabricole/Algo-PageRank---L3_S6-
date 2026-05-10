@@ -6,7 +6,7 @@
 \usepackage{amsmath, amssymb}
 \usepackage{graphicx}
 \usepackage{hyperref}
-\usepackage[a4paper, margin=2.5cm]{geometry}
+\usepackage[a4paper, margin=2.4cm]{geometry}
 \usepackage{listings}
 \usepackage{xcolor}
 \usepackage{titling}
@@ -23,9 +23,7 @@ frame=single
 }
 
 \title{Modélisation du Web et algorithme PageRank}
-\author{Rémi Parrot}
-\date{\today}
-
+\author{Rémi PARROT, Joachim ROBERT, Ryan WONG--TZE--KIOON}
 \begin{document}
 
 
@@ -38,27 +36,38 @@ frame=single
 \section{Introduction}
 
 Avec l'essor du Web, les moteurs de recherche sont devenus des outils incontournables
-pour naviguer dans une masse d'information qui ne cesse de croître.
-Le problème, c'est que le nombre de pages indexées est tel qu'il faut bien trouver
-un moyen de les ordonner. Pas seulement par pertinence thématique,
-mais aussi par importance relative.
+pour naviguer dans une masse d'informations qui ne cesse de croître.
+Avant que Google ne s'impose comme moteur de recherche dominant, c'est \href{https://fr.yahoo.com/}{Yahoo}
+qui était privilégié pour effectuer des recherches sur Internet.
+À l'époque, les différents sites étaient regroupés autour d'un sujet commun,
+et ces regroupements étaient gérés entièrement par des humains.
+Par ailleurs, les temps de chargement des pages étaient bien plus longs qu'aujourd'hui,
+et Yahoo avait fait le choix de concentrer sur sa page d'accueil tout ce qu'un utilisateur
+serait susceptible de vouloir : actualités, météo, messagerie, etc.
+ 
+Google a pris le contre-pied de cette approche sur deux points.
+D'abord, sa page de recherche se résumait à une simple barre de requête et un logo,
+ce qui la rendait nettement plus rapide à charger.
+Ensuite, et surtout, Google a privilégié une méthode automatique pour classer les pages
+selon un critère de pertinence, sans recourir à une organisation humaine.
 C'est précisément ce que propose l'algorithme \textit{PageRank},
-développé par Sergey Brin et Larry Page à la fin des années 1990
-pour le moteur de recherche Google.
-
-Le principe de base est assez intuitif : une page Web est d'autant plus importante
-qu'elle est citée par d'autres pages, et surtout par des pages elles-mêmes
-bien référencées.
+développé par Sergey Brin et Larry Page à la fin des années 1990 :
+un moyen d'ordonner les pages non seulement par pertinence thématique,
+mais aussi par importance relative, de façon entièrement automatisée.
+Couplé à une interface minimaliste, cet algorithme a permis à Google de prendre
+rapidement l'ascendant sur le marché pour devenir l'incontournable qu'il est aujourd'hui.
+ 
+Le principe de base du \textit{PageRank} est assez intuitif : une page Web est d'autant plus importante
+qu'elle est citée par d'autres pages, et surtout par des pages elles-mêmes bien référencées.
 Cette logique circulaire conduit naturellement à modéliser le Web comme un graphe orienté,
 où chaque page correspond à un sommet et chaque lien hypertexte à une arête orientée.
-
 À partir de ce modèle, on peut voir la navigation d'un utilisateur comme celle d'un
 \textit{surfeur aléatoire} qui se déplace de page en page en cliquant sur des liens au hasard.
 Son comportement suit alors une dynamique probabiliste que l'on formalise
 à l'aide d'une chaîne de Markov.
 Le classement des pages revient alors à trouver la distribution stationnaire
 de cette chaîne, c'est-à-dire la fréquence limite avec laquelle chaque page est visitée.
-
+ 
 Ce projet a pour but de détailler cette modélisation et l'algorithme qui en découle.
 On commencera par construire le modèle de graphe orienté et la matrice de transition
 associée au surfeur aléatoire.
@@ -67,6 +76,7 @@ du modèle de base, notamment les puits et les composantes déconnectées,
 et garantit l'existence d'une distribution stationnaire unique.
 Pour finir, on implémentera le calcul du PageRank en Python et on observera
 son comportement sur des graphes générés aléatoirement.
+
 
 \section{Modélisation du Web}
 
@@ -132,7 +142,7 @@ La matrice $P$ vérifie la propriété suivante :
 
 pour toute colonne $j$ telle que $\deg(j) \neq 0$.
 
-Ainsi, $P$ est une matrice stochastique par colonnes.
+Ainsi, $P$ est une matrice de vecteurs colonnes stochastiques ou nuls.
 
 \subsection{Limites du modèle}
 
@@ -157,15 +167,14 @@ peut poser des problèmes d'existence et d'unicité de la distribution stationna
 Pour y remédier, on introduit un mécanisme dit de téléportation.
 À chaque étape, le surfeur a deux comportements possibles :
 \begin{itemize}
-    \item suit un lien sortant avec probabilité $\alpha$,
-    \item se téléporte vers une page choisie uniformément au hasard avec
-    probabilité $1 - \alpha$.
+    \item suit un lien sortant avec une probabilité $\alpha$,
+    \item se téléporte vers une page choisie uniformément au hasard avec une probabilité $1 - \alpha$.
 \end{itemize}
 Le paramètre $\alpha$ vérifie :
 \[
 0 < \alpha < 1.
 \]
-En pratique, on choisit souvent une valeur proche de $0{,}8$.
+En pratique, on choisit souvent une valeur proche de $0{,}8$ : une valeur plus proche de $1$ est plus fidèle à la structure du graphe, mais admet une complexité temporelle plus élevée (voir section~\ref{sec:alpha}).
 
 \subsection{Définition de la matrice de Google}
 
@@ -231,6 +240,12 @@ Par définition, $x_k$ est un vecteur de probabilité et vérifie :
 x_k^{(i)} \geq 0 \quad \text{et} \quad \sum_{i=1}^n x_k^{(i)} = 1.
 \]
 
+À l'instant initial, on suppose que le surfeur a une probabilité uniforme de se trouver sur chacune des pages.
+On choisit donc :
+\[
+x_0 = \left(\frac{1}{n}, \dots, \frac{1}{n}\right).
+\]
+
 \subsection{Évolution du système}
 
 La transition d'un instant $k$ à l'instant $k+1$ est gouvernée
@@ -271,32 +286,79 @@ On cherche un vecteur de probabilité $x \in \mathbb{R}^n$ tel que :
 \[
 Gx = x.
 \]
-Un tel vecteur est appelé vecteur propre associé à la valeur propre 1.
-Il représente la distribution stationnaire du processus de Markov
-défini par la matrice $G$.
+\subsection{Existence et unicité d'un point fixe}
+Soit $P \in \mathcal{M}_n(\mathbb{R}_+)$ une matrice stochastique par colonnes,
+c'est-à-dire telle que $\mathbf{1}^T P = \mathbf{1}^T$,
+où $\mathbf{1} \in \mathbb{R}^n$ désigne le vecteur colonne dont toutes les entrées valent $1$.
 
-\subsection{Propriétés spectrales}
+La matrice de Google est : 
+\[
+G := \alpha P + \frac{1-\alpha}{n} \mathbf{1}\mathbf{1}^T,
+\]
+où $0 < \alpha < 1$.
 
-La matrice $G$ vérifie les propriétés suivantes :
-\begin{itemize}
-    \item $G$ est une matrice stochastique par colonnes.
-    \item Toutes ses entrées sont strictement positives.
-\end{itemize}
-Ces deux conditions réunies permettent d'invoquer le théorème de Perron-Frobenius,
-ce qui est précisément l'intérêt de la construction de $G$.
+On a $G\in\mathcal{M}_n(\mathbb{R}_+^*)$ et on remarque que $G$ est stochastique en colonne, en effet : 
+\begin{align*}
+\mathbf{1}^T G
+    &= \mathbf{1}^T \left( \alpha P + \frac{1-\alpha}{n} \mathbf{1}\mathbf{1}^T \right) \\
+    &= \alpha \mathbf{1}^T P + \frac{1-\alpha}{n} (\mathbf{1}^T \mathbf{1}) \mathbf{1}^T \\
+    &= \alpha \mathbf{1}^T + \frac{1-\alpha}{n} \cdot n \cdot \mathbf{1}^T \\
+    &= \mathbf{1}^T.
+\end{align*}
 
-\subsection{Théorème de Perron-Frobenius}
+On note :
+\[
+C = \left\{ x = (x_i)_{1 \leq i \leq n} \in \mathbb{R}_+^n : \sum_{i=1}^n x_i = 1 \right\}
+\]
+l'ensemble des vecteurs de probabilité à valeurs positives.
 
-Le théorème de Perron-Frobenius affirme que si une matrice carrée est
-strictement positive, alors :
-\begin{itemize}
-    \item elle admet une valeur propre dominante réelle et positive,
-    \item cette valeur propre est égale à 1 dans le cas d'une matrice stochastique,
-    \item le vecteur propre associé est unique à un facteur multiplicatif près,
-    \item ce vecteur peut être choisi à composantes strictement positives.
-\end{itemize}
+
+%le simplexe de dimension $n-1$.
+% \\Le but de cette partie est de montrer que :
+% \\$\forall G\in\mathcal{M}_n(\mathbb{R}_+^*)$ tel que $\mathds{1}^TG=\mathds{1}^T,\exists!x\in C,\forall X\in C,\lim\limits_{N \to\infty}G^NX=x$.
+% \\La nature du problème nous invite à considérer la convergence au sens de la norme 1. Ce que nous ferons.
+
+Soient $X, Y \in C$. Puisque $\mathbf{1}^T X = \mathbf{1}^T Y = 1$, on a $\mathbf{1}^T(X - Y) = 0$, d'où :
+\[
+GX - GY = \alpha P(X - Y) + \frac{1-\alpha}{n} \mathbf{1} \underbrace{\mathbf{1}^T(X-Y)}_{=\, 0} = \alpha P(X - Y).
+\]
+
+Comme $\alpha > 0$, en norme 1, cela donne : 
+\[
+    \|GX-GY\|_1=\alpha\|P(X-Y)\|_1
+\]
+
+Par inégalité triangulaire sur les normes matricielles, on obtient : 
+\[
+\|GX - GY\|_1 \leq \alpha \|P\| \cdot \|X - Y\|_1,
+\]
+où $\|P\| = \max_{x \in C} \|Px\|_1$.
+
+Pour tout $x \in C$, on calcule :
+\[
+\|Px\|_1
+    = \sum_{i=1}^{n} [Px]_i
+    = \sum_{i=1}^{n} \sum_{k=1}^{n} P_{ik}\, x_k
+    = \sum_{k=1}^{n} x_k \sum_{i=1}^{n} P_{ik}.
+\]
+
+Or $P$ est stochastique par colonnes, donc $\sum_{i=1}^{n} P_{ik} = 1$
+pour tout $k \in \{1, \ldots, n\}$.
+
+De plus, $x \in C$ implique $\sum_{k=1}^{n} x_k = 1$, d'où $\|Px\|_1 = 1$.
+
+Ainsi $\|P\| = 1$, et on obtient :
+\[
+\forall X, Y \in C, \quad \|GX - GY\|_1 \leq \alpha \|X - Y\|_1.
+\]
+
+$G$ est donc $\alpha$-contractante sur $\mathbb{R}^n$, qui est un espace vectoriel normé complet.
+Le théorème du point fixe de Banach-Picard assure alors l'existence et l'unicité d'un point fixe $x^*$. 
+
+
 
 \subsection{Conséquence pour le PageRank}
+
 
 On est donc assuré de l'existence d'un unique vecteur $x^*$ vérifiant :
 \[
@@ -307,12 +369,25 @@ avec :
 x^*_i \geq 0 \quad \text{et} \quad \sum_{i=1}^{n} x^*_i = 1.
 \]
 
-Ce vecteur correspond à la distribution stationnaire du surfeur aléatoire.
-Autrement dit, à la fréquence limite avec laquelle chaque page est visitée.
+Ce vecteur correspond à la distribution stationnaire du surfeur aléatoire. Autrement dit, c'est la fréquence limite à laquelle chaque page est visitée. 
 Ses composantes constituent les scores de PageRank.
 
-Ainsi, le problème du classement des pages revient à calculer
-ce vecteur propre associé à la valeur propre 1.
+De plus, le théorème de Banach-Picard nous dit qu'en considérant, pour un $x_{0}$ arbitraire, la relation $x_{n+1} = Gx_{n}$, la suite $(x_{n})_{n\in\mathbb{N}}$ converge géométriquement vers $x^{*}$. 
+
+En effet, on peut montrer par récurrence que : 
+\[
+\forall n \in \mathbb{N}, \hspace{0.2cm} \|G^{n}x_{0} - x^{*} \| \leq \alpha^{n}\|x_{0} - x^{*}\|
+\]
+
+Cette convergence permettra, informatiquement, de mettre en place un algorithme
+pour trouver cet état stationnaire.
+On choisira arbitrairement un seuil $\varepsilon$ tel qu'il existera un rang $m$ pour lequel :
+\[
+\|G^m x_0 - x^*\| \leq \varepsilon,
+\]
+afin de garantir que l'algorithme se termine. 
+% Ainsi, le problème du classement des pages revient à calculer
+% ce vecteur propre associé à la valeur propre 1.
 
 
 
@@ -577,6 +652,7 @@ est représenté sur la figure suivante :
 \end{figure}
 
 \subsection{Influence du paramètre \texorpdfstring{$\alpha$}{alpha}}
+\label{sec:alpha}
 
 Le paramètre $\alpha$ contrôle la probabilité que le surfeur suive
 un lien hypertexte plutôt que de se téléporter vers une page aléatoire.
@@ -601,8 +677,7 @@ et c'est la valeur couramment retenue.
 
 On s'intéresse maintenant à l'effet de $\alpha$ sur la distribution
 des scores PageRank elle-même.
-Pour cela, on fixe un graphe (plein), de petite taille ($n = 10$)
-et on calcule le vecteur $x^*$ pour plusieurs valeurs de $\alpha$.
+Pour cela, on fixe un graphe dense, de petite taille ($n = 10$), et on calcule le vecteur $x^*$ pour plusieurs valeurs de $\alpha$.
 
 \begin{figure}[h!]
 \centering
@@ -670,5 +745,385 @@ des outils relativement accessibles, tels que les graphes orientés,
 les matrices stochastiques ou encore l'itération de puissance,
 suffisent à traiter un problème d'une complexité réelle, à condition de les combiner avec soin.
 
+
+
+\newpage
+\pagestyle{empty}
+\section*{Annexe}
+
+\begin{lstlisting}
+
+"""
+Implementation et analyse de l'algorithme PageRank.
+ 
+Fonctionnalites :
+    Generation de graphes aleatoires (dense et creux)
+    Calcul du PageRank
+    Visualisation du graphe avec tailles de noeuds proportionnelles au 
+    PageRank
+    Etude de la convergence en fonction du parametre alpha
+    Comparaison des performances dense vs creux
+"""
+
+import time
+
+import matplotlib.pyplot as plt
+import networkx as nx
+import numpy as np
+from scipy.sparse import csc_matrix, csr_matrix
+
+
+epsilon = 1e-16
+ALPHA_DEFAULT  = 0.85
+
+# Generation de graphes aleatoires
+def graph_alea(n, methode="dense"):
+    """
+    Genere une matrice d'adjacence aleatoire.
+ 
+    methode="dense"  : matrice n*n binaire uniforme
+                       Complexite : O(n^2)
+ 
+    methode="creux" : chaque noeud a en moyenne log2(n) liens sortants.
+                       Retourne une csc_matrix de forme (n, n).
+                       Complexite : O(n*log n)
+    """
+    if methode == "dense":
+        A= np.random.randint(2, size=(n, n))
+ 
+    else :
+        d       = int(np.log(n))   # degre moyen cible
+        p       = d / n             # probabilite binomiale associee
+        indptr  = [0]
+        indices = []
+        data    = []
+ 
+        for j in range(n):
+            k = np.random.binomial(n, p)  # nombre de liens sortants de j
+            if k > 0:
+                col = np.random.choice(n, size=k, replace=False)
+                col.sort()
+                indices.extend(col)
+                data.extend([1] * k)
+            indptr.append(len(indices))
+        A = csc_matrix((data, indices, indptr), shape=(n, n))
+ 
+    return A
+
+# Converion de la matrice en graphe oriente NetworkX
+def mat_to_graph(A, n, methode="dense"):
+    """
+    Convertit une matrice d'adjacence A en graphe oriente NetworkX.
+    A[i,j] = 1 signifie qu'il y a un lien de la page j vers la page i.
+ 
+    Pour methode="creux", A est convertie en dense avant parcours
+    (usage reserve a la visualisation de petits graphes).
+ 
+    Complexite : O(n^2)
+    """
+    G = nx.DiGraph()
+    G.add_nodes_from(range(n))
+ 
+    if methode == "creux":
+        A = A.toarray()
+ 
+    for i in range(n):
+        for j in range(n):
+            if A[i, j] == 1:
+                G.add_edge(j, i)
+ 
+    return G
+
+# Vecteur initial du surfer
+def surfer_alea(n):
+    """
+    Genere un vecteur de probabilite uniforme
+    representant la position initiale du surfer.
+
+    Complexite :
+    O(n)
+    """
+
+    x = np.ones(n) / n
+
+    return x
+
+# Affichage du graphe
+def affiche_graph(A, n, f=None, methode="dense") :
+    """
+    Affiche le graphe.
+
+    Complexite : Complexite de la fonction draw : couteuse pour des 
+    grandes valeurs de n.
+    """
+    
+    Ggraph = mat_to_graph(A, n, methode)
+    pos = nx.spring_layout(Ggraph, seed=42) 
+    # Positionnement des noeuds pour une meilleure visualisation.
+     
+    plt.figure("Graphe :")
+    nx.draw(Ggraph, 
+            pos, 
+            with_labels=True, 
+            font_size=8,
+            node_size=8000/n)
+
+    #ligne suivante pour enregistrer le graphe et l'inserer au rapport.
+    if f :
+        plt.savefig(f)
+    
+    plt.show()
+
+    return
+
+# Matrice de transition P
+def calcul_P(A, n, methode="dense"):
+    """
+    Calcule la matrice de transition P du graphe.
+    P[i,j] = probabilite de passer de j vers i
+ 
+    methode="dense"  : A est une matrice n*n
+                       Complexite : O(n^2)
+ 
+    methode="sparse" : A est une csr_matrix. (matrice creuse au format 
+                       colonne)
+                       Complexite : O(nnz(A)) = O(n*log n), avec nnz(A) 
+                       le nombre d'entrees non nulles de A.
+    """
+    if methode == "dense":
+
+        P = np.zeros((n, n))
+
+        for j in range(n):
+
+            #Calcul du degre sortant de j
+            deg = np.sum(A[:, j])
+
+            #remplissage de la colonne j de P
+            if deg != 0:
+
+                for i in range(n):
+
+                    if A[i, j] == 1:
+                        P[i, j] = 1.0 / deg
+    else :
+        rows = []
+        cols = []
+        data = []
+
+        #parcours colonne par colonne
+        for j in range(n):
+
+            debut = A.indptr[j]
+            fin = A.indptr[j+1]
+
+            #degre de la colonne j :
+            deg = fin - debut
+
+            if deg > 0: 
+
+                for i in A.indices[debut:fin] :
+                    rows.append(i)
+                    cols.append(j)
+                    data.append(1.0 / deg)
+
+        P = csr_matrix((data, (rows, cols)), shape=(n, n))
+    return P
+
+# Algorithme de PageRank
+def pagerank(A, n, x, methode="dense", alpha=0.85):
+    """
+    Calcule le vecteur PageRank par iteration :
+
+        x_{k+1} = alpha * P * x_k + (1-alpha)/n * 1
+
+    jusqu'a convergence.
+
+    Critere d'arret :
+        max |x_{k+1} - x_k| < epsilon : toutes les composantes du vecteur 
+        de probabilite sont proches de leur valeur limite.
+
+    Methode "dense" : on utilise np.dot donc la complexite est en 
+    O(n^2 * k) avec k le nombre d'iterations necessaires pour atteindre 
+    la convergence.
+    Methode "creux" : on utilise P.dot(x) donc la complexite est en 
+    O(nnz(P) * k) = O(n*log n * k).
+    """
+
+    teleport = (1.0 - alpha) / n
+    erreurs = []
+
+    P = calcul_P(A, n, methode)
+
+    diff = 1
+
+    while diff > epsilon :
+        if methode == "dense":
+            xnext = alpha * np.dot(P, x) + teleport
+        else :
+            xnext = alpha * P.dot(x) + teleport
+
+
+        diff = np.max(np.abs(x - xnext))
+        erreurs.append(diff)
+        x = xnext
+    
+    return xnext, erreurs
+
+# Visualisation du PageRank
+def draw_pagerank(A, n, alpha, f=None, methode="dense"):
+    """
+    Affiche le graphe obtenu avec des tailles de noeuds proportionnelles 
+    au PageRank.
+    """
+
+    Ggraph = mat_to_graph(A, n, methode)
+    x0 = surfer_alea(n)
+
+    scores, _ = pagerank(A, n, x0, methode, alpha)
+    sizes = 50000*scores /n
+    pos = nx.spring_layout(Ggraph, seed=42)
+
+    plt.figure("Graphe avec PageRank :")
+    nx.draw(Ggraph, 
+            pos, 
+            with_labels=True,  
+            font_size=8,
+            node_size=sizes)
+
+    if f:
+        plt.savefig(f)
+
+    plt.show()
+    
+    return
+
+# etude de la convergence selon alpha
+def convergence_alpha(A, n, x, alphas=None, methode="dense"):
+    """
+    Etudie la convergence de l'algorithme de PageRank en fonction de 
+    alpha.
+    On remarque que plus alpha est proche de 1, plus la convergence est 
+    lente, mais plus alpha est proche de 1, plus le PageRank depend du 
+    graphe et moins du hasard.
+
+    On cherche un bon candidat pour alpha, qui soit a la fois rapide a 
+    converger et qui reflete bien la structure du graphe.
+
+    methode : "dense" ou "creux"
+    """
+
+    if alphas is None :
+        alphas = [0.6,0.7,0.8,0.85,0.9,0.95]
+    
+        
+    plt.figure()
+
+    for a in alphas:
+
+        _, erreurs = pagerank(A, n, x.copy(), methode, a)
+        plt.semilogy(erreurs,label=f"alpha={a}")
+
+    plt.xlabel("Iteration")
+    plt.ylabel("Erreur (log)")
+    plt.title("Convergence du PageRank selon alpha")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig("convergence_alpha.png")
+    plt.show()
+
+    return
+
+# Comparaison des performances : dense vs creux
+def comparaison(sizes, essais=100, alpha = ALPHA_DEFAULT):
+    """
+    Mesure et compare les temps d'execution du PageRank dense et creux
+    pour differentes tailles de graphe.
+
+    Parametres :
+        sizes  : liste de valeurs de n a tester
+        essais : nombre de repetitions pour moyenner les temps
+    
+    Les deux methodes partent du meme graphe creux converti en dense,
+    et du meme vecteur de surfer initial.
+    Affiche une courbe temps moyen en fonction de la taille du graphe.
+    """
+    temps_dense  = []
+    temps_creux = []
+
+    for n in sizes:
+        print(f"Comparaison n={n}...")
+        td, ts = 0.0, 0.0
+        x = surfer_alea(n)
+
+        for _ in range(essais):
+            
+            A_creux = graph_alea(n, "creux")
+            A_dense = A_creux.toarray()
+
+            # Dense
+            start = time.time()
+
+            pagerank(A_dense, n, x.copy(), "dense", alpha)
+            td   += time.time() - start
+
+            # Creux
+            start = time.time()
+            pagerank(A_creux, n, x.copy(), "creux", alpha)
+            ts   += time.time() - start
+
+        temps_dense.append(td / essais)
+        temps_creux.append(ts / essais)
+
+    plt.figure()
+    plt.plot(sizes, temps_dense, label="Dense")
+    plt.plot(sizes, temps_creux, label="Creuse")
+    plt.xlabel("Nombre de pages")
+    plt.ylabel("Temps moyen (s)")
+    plt.title("Comparaison PageRank dense vs creux")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig("comparaison_dense_vs_creux.png")
+    plt.show()
+    return
+
+# Programme principal
+
+def main():
+    
+    # Parametres
+    n            = int(input("Nombre de pages : "))
+    assert n > 0, "Le nombre de pages doit etre positif."
+
+    alpha_values = [0.85]
+    methode = "creux"
+    x0 = surfer_alea(n)
+    
+    # Generation
+    A  = graph_alea(n, methode)
+    
+    filename1 = f"graphe_n{n}_{methode}.png"
+    affiche_graph(A, n, filename1, methode)
+
+    for a in alpha_values:
+        filename2 = f"pagerank_alpha_{int(a*100)}_{methode}.png"
+        draw_pagerank(A, n, a, filename2, methode)
+
+
+    # Etude de convergence selon alpha
+
+    convergence_alpha(A, n, x0.copy(), methode=methode)
+    
+    # Comparaison dense vs creux
+    comparaison(sizes=[200, 400, 600, 800, 1000, 1200, 1400, 1600, 
+                       1800, 2000], essais=1000)
+
+    return
+
+
+if __name__ == "__main__":
+    main()
+
+\end{lstlisting}
 
 \end{document}
