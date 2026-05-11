@@ -352,8 +352,11 @@ Ainsi $\|P\| = 1$, et on obtient :
 \forall X, Y \in C, \quad \|GX - GY\|_1 \leq \alpha \|X - Y\|_1.
 \]
 
-$G$ est donc $\alpha$-contractante sur $\mathbb{R}^n$, qui est un espace vectoriel normé complet.
-Le théorème du point fixe de Banach-Picard assure alors l'existence et l'unicité d'un point fixe $x^*$. 
+$G$ est donc $\alpha$-contractante sur $C$.
+$C$ est une partie fermée de $\mathbb{R}^n$,
+donc un espace métrique complet pour la norme $\|\cdot\|_1$.
+Le théorème du point fixe de Banach-Picard assure alors
+l'existence et l'unicité d'un point fixe $x^*$.
 
 
 
@@ -458,13 +461,13 @@ def calcul_P(A,n):
 
         if deg != 0:
             for i in range(n):
-                if A[i][j] == 1:
-                    P[i][j] = 1/deg
+                if A[i,j] == 1:
+                    P[i,j] = 1/deg
 
     return P
 \end{lstlisting}
 
-\paragraph{Complexité}
+\paragraph{Complexité :}
 
 La fonction parcourt l'ensemble des colonnes de la matrice
 et examine leurs coefficients. Deux boucles de taille n,
@@ -476,13 +479,12 @@ La matrice de Google est ensuite obtenue à partir de $P$ via la formule :
 \[
 G = \alpha P + \frac{1-\alpha}{n}\mathbf{1}.
 \]
-Le paramètre $\alpha$ est fixé à $0{,}8$ dans notre implémentation :
-Il règle l'équilibre entre navigation par liens et téléportation aléatoire.
+Le paramètre $\alpha$ est donné en argument de nos fonctions pour permettre plusieurs manipulations par la suite (voir section~\ref{sec:alpha}).
 
 On l'implémente de cette manière :
 
 \begin{lstlisting}
-def calcul_G(A,n):
+def calcul_G(A,n, alpha):
 
     P = calcul_P(A,n)
     U = np.ones((n,n))
@@ -492,7 +494,7 @@ def calcul_G(A,n):
     return G
 \end{lstlisting}
 
-\paragraph{Complexité}
+\paragraph{Complexité :}
 
 La construction de la matrice nécessite, la construction de P en O($n^2$), celle de U en O($n^2$) aussi, ainsi que des opérations
 sur les $n^2$ coefficients de la matrice.
@@ -500,7 +502,7 @@ Ce qui donne une complexité en O($n^2$) également.
 
 \subsection{Calcul du PageRank}
 
-On construit le vecteur initial $x_0$ en créant un tableau de taille n, rempli d'entier aléatoires entre 0 et 1, que l'on normalise ensuite avec la somme des élément du tableau pour obtenir un vecteur de probabilité. La complexité de \texttt{surfer\_alea(n)} est donc en O(n).
+On construit le vecteur initial $x_0$ en créant un tableau de taille $n$ rempli de $1$, que l'on divise ensuite par $n$ pour obtenir le vecteur uniforme $x_0 = (1/n, \dots, 1/n)$. La complexité de \texttt{surfer\_alea(n)} est donc en O($n$).
 
 Le vecteur PageRank est ensuite calculé par la méthode d'itération suivante :
 \[
@@ -509,37 +511,44 @@ x_{k+1} = Gx_k.
 On répète le produit matrice-vecteur jusqu'à convergence.
 Le critère d'arrêt retenu, pour $\varepsilon$ choisi arbitrairement, est :
 \[
-\max_i |x_{k+1,i} - x_{k,i}| < \varepsilon.
+\max_i \, |x_{k+1,i} - x_{k,i}| < \varepsilon.
 \]
-Cette méthode est simple à mettre en œuvre et converge relativement vite
-en pratique.
+On mesure ainsi l'écart maximal entre deux itérations consécutives composante par composante.
+Lorsque cet écart devient inférieur à $\varepsilon$, on considère que la suite a convergé
+et on renvoie le vecteur courant comme approximation de $x^*$.
+ 
+La fonction renvoie également la liste des erreurs successives,
+ce qui permet d'analyser la vitesse de convergence de l'algorithme (voir section~\ref{sec:convergence}).
 
-L'implémentation Python est la suivante :
+Son implémentation est la suivante :
 
 \begin{lstlisting}
-def pagerank(G,n):
+def pagerank(A,n,x,alpha) :
+    G = calcul_G(A,n,alpha)
 
-    x = surfer_alea(n)
+    erreurs = []
 
-    xnext = np.dot(G,x)
-    diff = np.max(np.abs(x - xnext))
+    diff = 1
 
-    while diff > epsilon:
+    while diff > epsilon :
+    
+      xnext = np.dot(G,x)
 
-        x = xnext
-        xnext = np.dot(G,x)
+      diff = np.max(np.abs(x - xnext))
 
-        diff = np.max(np.abs(x - xnext))
+      erreurs.append(diff)
+    
+      x = xnext
 
-    return x
+    return xnext, erreurs
 \end{lstlisting}
 
-\paragraph{Complexité}
+\paragraph{Complexité :}
 
 Chaque itération correspond à un produit matrice vecteur,
-dont le coût est en O($n^2$), et la boucle est itéré k fois, k étant le nombre d'itérations nécessaires pour atteindre la convergence. La complexité de l'algorithme est donc en O(k$n^2$).
+dont le coût est en O($n^2$), et la boucle est itérée k fois, k étant le nombre d'itérations nécessaires pour atteindre la convergence. On verra par la suite que k dépend fortement de $\alpha$ (voir section~\ref{sec:alpha}). En pratique, le nombre d'itérations nécessaires pour atteindre la convergence reste faible devant $n$, donc la complexité de l'algorithme reste en O($n^2$).
 
-\section{Expériences numériques}
+\section{Premiers résultats}
 
 Afin d'étudier le comportement de l'algorithme PageRank,
 nous avons réalisé plusieurs expériences numériques sur
@@ -548,33 +557,45 @@ des graphes générés aléatoirement.
 Dans un premier temps, nous utilisons des matrices pleines
 afin de simplifier l'implémentation. L'utilisation de matrices
 creuses, plus adaptées à la structure réelle du Web, sera
-discutée dans la section suivante.
+discutée dans la section suivante (~\ref{sec:creuses}).
 
-\subsection{Génération d'un graphe aléatoire}
-
-Nous générons une matrice d'adjacence aléatoire
-$A \in \{0,1\}^{n \times n}$.
-
-Dans les expériences suivantes, pour mieux visualiser nous choisissons arbitrairement :
+Dans l'expérience suivante, pour mieux visualiser, nous choisissons arbitrairement :
 
 \[
-n = 10\ ;\ \alpha = 0,8\ ;\ \varepsilon = 10^{-16}
+n = 10\ ;\ \alpha = 0,85\ ;\ \varepsilon = 10^{-16}
 \]
 
-Le graphe orienté correspondant peut être visualisé
-grâce à la bibliothèque \texttt{networkx}.
-
+\subsection{Graphe généré et scores PageRank}
+ 
+On génère une matrice d'adjacence aléatoire $A \in \{0,1\}^{n \times n}$
+et on calcule le vecteur PageRank associé.
+Les figures \ref{graphe} et \ref{pagerank} ci-dessous présentent le graphe orienté obtenu ainsi que
+la visualisation des scores : la taille de chaque sommet est proportionnelle
+à son score PageRank, ce qui permet d'identifier visuellement les pages les plus importantes.
+ 
 \begin{figure}[h!]
-
 \centering
-\includegraphics[width=0.7\textwidth]{graphe.png}
-
-\caption{Exemple de graphe orienté généré aléatoirement}
-
+\begin{minipage}{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{graphe.png}
+    \caption{Graphe orienté généré aléatoirement}
+    \label{graphe}
+\end{minipage}
+\hfill
+\begin{minipage}{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{pagerank.png}
+    \caption{Scores PageRank associés}
+    \label{pagerank}
+\end{minipage}
 \end{figure}
+ 
+On observe que certaines pages se détachent nettement des autres,
+ce qui correspond aux sommets recevant davantage de liens entrants.
+
 
 \subsection{Convergence de l'algorithme}
-
+\label{sec:convergence}
 L'algorithme PageRank repose sur l'itération
 
 \[
@@ -584,8 +605,8 @@ x_{k+1} = Gx_k.
 Nous observons que la suite $(x_k)$ converge rapidement
 vers la distribution stationnaire.
 
-La figure suivante représente l'évolution de l'erreur
-entre deux itérations successives.
+La figure \ref{convergence_algo} représente l'évolution de l'erreur
+entre deux itérations successives, lors de l’expérience précédente.
 
 \begin{figure}[h!]
 
@@ -594,64 +615,124 @@ entre deux itérations successives.
 
 \caption{Convergence de l'algorithme PageRank}
 
+\label{convergence_algo}
 \end{figure}
 
-\subsection{Visualisation des scores PageRank}
 
-Une fois le vecteur PageRank calculé, il est possible
-de visualiser l'importance relative des pages en
-représentant la taille des sommets proportionnellement
-à leur score.
-
-\begin{figure}[h!]
-
-\centering
-\includegraphics[width=0.7\textwidth]{pagerank.png}
-
-\caption{Visualisation du PageRank sur un graphe}
-
-\end{figure}
-
-On observe que certaines pages apparaissent plus
-importantes que d'autres, ce qui correspond aux
-sommets recevant davantage de liens.
-
-
-
-\section{Optimisations}
+\section{Réalisme et Optimisations}
 
 \subsection{Utilisation de matrices creuses}
-
+\label{sec:creuses}
 Dans l'implémentation précédente, les matrices sont stockées sous forme pleine
 de taille $n \times n$, ce qui représente un coût mémoire de l'ordre de $O(n^2)$.
-Pour de grandes valeurs de $n$, cela devient vite problématique. D'autant plus que, dans un réseau web réel, chaque page ne pointe
-que vers un nombre limité d'autres pages.
-La matrice d'adjacence est donc très majoritairement composée de zéros,
-ce qui rend la représentation pleine inefficace et non réaliste.
-
-En passant à une représentation creuse, seules les entrées non nulles sont stockées.
+Pour de grandes valeurs de $n$, cela devient vite problématique.
+D'autant plus que dans un réseau web réel, chaque page ne pointe que vers
+un nombre limité d'autres pages : la matrice d'adjacence est donc très
+majoritairement composée de zéros, ce qui rend la représentation pleine
+inefficace et non réaliste.
+ 
+On passe donc à une représentation creuse au format CSC (\textit{Compressed Sparse Column}).
+Ce format stocke uniquement les entrées non nulles de la matrice, organisées en trois tableaux :
+\begin{itemize}
+    \item les valeurs non nulles,
+    \item les indices de ligne correspondants,
+    \item les indices de début de chaque colonne dans le tableau des valeurs.
+\end{itemize}
+Ce format est particulièrement adapté au produit matrice-vecteur colonne par colonne,
+qui est précisément l'opération centrale de l'itération PageRank.
+La complexité par itération tombe alors à $O(m)$, où $m$ est le nombre total d'arêtes du graphe.
 Le produit matrice-vecteur de l'itération PageRank ne dépend alors plus de $n^2$,
-mais uniquement du nombre d'arêtes $m$ du graphe.
-La complexité par itération tombe à $O(m)$, et dans notre cas on a bien :
-\[
-m \ll n^2
-\]
-pour de très grandes valeurs de $n$, ce qui permet de réduire considérablement le temps de calcul.
+mais uniquement du nombre total d'arêtes $m$ du graphe,
+ce qui fait tomber la complexité par itération à $O(m)$.
+ 
+\paragraph{Choix du nombre moyen de liens par page :}
+ 
+Pour générer des graphes creux réalistes, on choisit un nombre moyen de liens
+par page égal à $\lfloor \log_{10}(n) \rfloor$.
+Ce choix est motivé par deux observations :
+\begin{itemize}
+    \item En pratique, le nombre de liens sortants d'une page web est faible
+    et croît très lentement avec la taille du Web.
+    $\log_{10}$ est une fonction à croissance très lente : pour $n = 1\,000$ pages,
+    on obtient $3$ liens par page en moyenne ; pour $n = 1\,000\,000$, seulement $6$.
+    Cela reflète bien le fait qu'une page ne pointe que vers une poignée d'autres,
+    indépendamment de la taille globale du réseau.
+    \item Ce choix garantit que $m = n \lfloor \log_{10}(n) \rfloor \ll n^2$
+    dès que $n$ est grand, ce qui assure un gain effectif par rapport à la représentation dense.
+\end{itemize}
+ 
+Le nombre de liens de chaque page est tiré selon une loi de Poisson de paramètre
+$\lfloor \log_{10}(n) \rfloor$.
+Ce choix est naturel pour modéliser un comptage d'événements rares et indépendants :
+ici, chaque lien sortant peut être vu comme un événement indépendant,
+et la loi de Poisson garantit que le nombre moyen de liens par page vaut bien $\lambda$,
+tout en permettant une variabilité réaliste autour de cette valeur
+(certaines pages auront plus de liens, d'autres moins).
 
-Pour quantifier cet écart, on a mesuré le temps moyen d'exécution
-de l'algorithme pour les deux représentations.
-Pour chaque taille $n = 200, 400, \ldots, 2000$, nous avons généré
-des graphes aléatoires et exécuté l'algorithme $1000$ fois pour
-chaque représentation (dense et creuse). Le temps moyen obtenu
-est représenté sur la figure suivante :
+\paragraph{Comparaison expérimentale :}
+ 
+Pour quantifier le gain en temps de calcul, on a mesuré le temps d'exécution
+de l'algorithme sur deux représentations d'un même graphe.
+Pour chaque taille $n = 200, 400, \ldots, 2\,000$, on a généré $1\,000$ graphes
+aléatoires distincts, et pour chacun d'eux, on a exécuté l'algorithme PageRank
+successivement sur la représentation dense et sur la représentation creuse
+du même graphe. Le temps moyen sur ces $1\,000$ graphes
+est représenté sur la figure \ref{comparaison}.
 
 \begin{figure}[h!]
 \centering
 \includegraphics[width=0.7\textwidth]{dense_vs_sparse.png}
-\caption{Comparaison du temps de calcul entre matrices denses et creuses}
+\caption{Comparaison du temps de calcul algo entre matrices denses et creuses}
+\label{comparaison}
 \end{figure}
 
+On observe que le temps d'exécution pour la représentation dense croît de façon
+quasi quadratique avec $n$, ce qui est cohérent avec la complexité théorique en $O(n^2)$ par itération. Malgré le faible nombre de lien, l'algorithme parcours toujours toute la matrice.
+
+À l'inverse, le temps pour la représentation creuse reste
+quasi nul sur toute la plage de valeurs testées : le faible nombre de liens
+par page ($\lfloor \log_{10}(n) \rfloor$) maintient $m \ll n^2$,
+et le gain apporté par le format CSC est donc particulièrement marqué
+dès que $n$ devient grand.
+
+\subsection{Exemple sur un graphe creux}
+ 
+On illustre ici le comportement de l'algorithme sur un graphe creux de taille $n = 65$,
+généré aléatoirement. Les figures \ref{graphe_creux} et \ref{pagerank_creux} présentent la structure brute du graphe
+ainsi que les scores PageRank associés, pour $\alpha = 0{,}85$.
+ 
+\begin{figure}[h!]
+\centering
+\centering
+\includegraphics[width=0.7\textwidth]{graphe_n65_creux.png}
+\caption{Structure du graphe ($n = 65$)}
+\label{graphe_creux}
+\end{figure}
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.7\textwidth]{pagerank_n65_alpha_85_creux.png}
+\caption{Scores PageRank associés ($\alpha = 0{,}85$)}
+\label{pagerank_creux}
+\end{figure}
+ 
+La représentation creuse
+permet de ne faire apparaître qu'un faible nombre de liens, ce qui évite la saturation visuelle produite par un graphe dense de même taille. La structure générale du graphe reste assez visible.
+ 
+On observe que certaines pages se détachent nettement des autres.
+Le nœud le plus grand concentre un score PageRank bien supérieur à la moyenne :
+il reçoit un grand nombre de liens entrants, ce qui lui confère une importance élevée
+aux yeux de l'algorithme.
+À l'opposé, des nœuds apparaissent très petits, presque invisibles :
+peu référencés et disposant de peu de liens sortants, ils ne bénéficient presque
+que du facteur de téléportation.
+Ces nœuds ne sont pas complètement isolés : ils entretiennent quelques connexions,
+mais celles-ci sont insuffisantes pour leur faire gagner un score significatif.
+
+
 \subsection{Influence du paramètre \texorpdfstring{$\alpha$}{alpha}}
+
+\paragraph{Vitesse de Convergence :}
 \label{sec:alpha}
 
 Le paramètre $\alpha$ contrôle la probabilité que le surfeur suive
@@ -659,42 +740,63 @@ un lien hypertexte plutôt que de se téléporter vers une page aléatoire.
 Il joue un rôle sur deux aspects distincts : le comportement du modèle
 et la vitesse de convergence de l'algorithme.
 
-La figure suivante montre l'évolution de l'erreur $\|x_{k+1} - x_k\|_\infty$
-au fil des itérations, pour différentes valeurs de $\alpha$ et $n = 200$.
+La figure \ref{influ_alpha} montre l'évolution de l'erreur
+$\|x_{k+1} - x_k\|_\infty$
+au fil des itérations, pour une matrice creuse, différentes valeurs de $\alpha$
+et $n = 200$.
 
 \begin{figure}[h!]
 \centering
 \includegraphics[width=0.7\textwidth]{alpha_convergence.png}
 \caption{Influence du paramètre $\alpha$ sur la convergence}
+\label{influ_alpha}
 \end{figure}
+L'axe vertical est représenté avec une échelle logarithmique.
+Ce choix permet de visualiser plus clairement la décroissance de l'erreur,
+qui devient très rapide après quelques itérations.
+Avec une échelle linéaire, les petites valeurs de l'erreur seraient
+écrasées près de zéro et les différences de vitesse de convergence
+entre les différentes valeurs de $\alpha$ seraient beaucoup moins visibles et impossibles à comparer.
 
 Sans grande surprise, les valeurs faibles de $\alpha$ convergent plus vite :
 la téléportation vers une page aléatoire domine, ce qui homogénéise rapidement la distribution.
-À l'inverse, des valeurs proches de $1$ accordent plus de poids à la
-structure du graphe, au prix d'une convergence plus lente.
-En pratique, $\alpha = 0{,}8$ constitue un compromis raisonnable,
-et c'est la valeur couramment retenue.
 
+À l'inverse, les valeurs proches de $1$ accordent davantage de poids à la
+structure du graphe, au prix d'une convergence plus lente.
+
+En pratique, $\alpha = 0{,}85$ constitue un compromis raisonnable :
+la structure du graphe reste prépondérante dans le calcul du PageRank,
+tout en conservant une vitesse de convergence satisfaisante.
+C'est d'ailleurs la valeur historiquement utilisée par Google.
+
+
+
+\paragraph{$\alpha$ et PageRank :}
 On s'intéresse maintenant à l'effet de $\alpha$ sur la distribution
-des scores PageRank elle-même.
-Pour cela, on fixe un graphe dense, de petite taille ($n = 10$), et on calcule le vecteur $x^*$ pour plusieurs valeurs de $\alpha$.
+des scores PageRank elle-même. Pour cela, on fixe un même graphe creux de taille $n = 20$,
+puis on calcule le PageRank pour plusieurs valeurs de $\alpha$.
+
+Les graphes obtenus sont ensuite représentés, l'objectif étant de comparer l'importance relative accordée à la structure 
+du graphe et à la téléportation aléatoire selon les différentes valeurs de $\alpha$. 
 
 \begin{figure}[h!]
 \centering
 \includegraphics[width=0.8\textwidth]{pagerank_alpha_06.png}
 \caption{Distribution du PageRank pour $\alpha = 0{,}6$}
+\label{alpha_06}
 \end{figure}
 
 \begin{figure}[h!]
 \centering
-\includegraphics[width=0.6\textwidth]{pagerank_alpha_09.png}
+\includegraphics[width=0.8\textwidth]{pagerank_alpha_09.png}
 \caption{Distribution du PageRank pour $\alpha = 0{,}9$}
+\label{alpha_09}
 \end{figure}
 
-Pour $\alpha = 0{,}6$, les scores sont relativement proches les uns des autres,
+Pour $\alpha = 0{,}6$ (\ref{alpha_06}), les scores sont relativement proches les uns des autres,
 ce qui reflète un comportement assez uniforme. La téléportation efface
 en partie les différences de structure.
-Pour $\alpha = 0{,}9$ en revanche, certaines pages se détachent nettement :
+Pour $\alpha = 0{,}9$ (\ref{alpha_09}) en revanche, certaines pages se détachent nettement :
 la topologie du graphe reprend le dessus, et les sommets bien connectés
 voient leur score augmenter de façon marquée.
 Le paramètre $\alpha$ agit donc bien comme un curseur entre exploration
@@ -710,28 +812,26 @@ s'offrent en effet : augmenter les ressources disponibles,
 ou trouver une modélisation qui rende le problème structurellement
 plus simple.
 PageRank emprunte résolument la seconde voie.
-
+ 
 Plutôt que d'analyser localement chaque lien, l'algorithme exploite
 une représentation probabiliste du graphe via les chaînes de Markov.
-Le classement émerge alors d'une propriété globale. La distribution
-stationnaire est capturée par une équation propre, aussi compacte qu'efficace.
+Le classement émerge alors d'une propriété globale : la distribution
+stationnaire, capturée par une équation de point fixe aussi compacte qu'efficace,
+dont l'existence et l'unicité sont garanties par le théorème de Banach-Picard.
 Ce changement de point de vue est, rétrospectivement, ce qui rend
 l'approche aussi élégante que puissante.
-
+ 
 Cela dit, la pertinence mathématique ne suffit pas.
-Comme on l'a vu avec la comparaison entre les matrices denses et les matrices creuses,
-le passage à une représentation adaptée à la structure réelle
-du graphe réduit drastiquement le coût de chaque itération,
-de $O(n^2)$ à $O(m)$, ce qui change tout dès que $n$ dépasse
-quelques milliers de pages.
-
-Le paramètre $\alpha$ illustre de son côté un compromis inhérent
-au modèle : donner trop de poids à la téléportation ($\alpha$ faible)
-efface les différences de structure ; trop peu ($\alpha$ proche de $1$)
-ralentit la convergence.
-La valeur $\alpha = 0{,}8$ couramment retenue en pratique n'est pas
-complètement arbitraire. elle reflète un équilibre empiriquement validé.
-
+Comme on l'a vu avec la comparaison entre matrices denses et matrices creuses au format CSC,
+le passage à une représentation adaptée à la structure réelle du graphe
+réduit drastiquement le coût de chaque itération, de $O(n^2)$ à $O(m)$,
+ce qui change tout dès que $n$ dépasse quelques milliers de pages.
+Le paramètre $\alpha$ illustre de son côté un compromis inhérent au modèle :
+donner trop de poids à la téléportation efface les différences de structure ;
+trop peu ralentit la convergence.
+La valeur $\alpha = 0{,}85$ historiquement retenue par Google
+reflète un équilibre empiriquement validé entre ces deux extrêmes.
+ 
 Le modèle a toutefois ses limites.
 Il repose sur une vision assez schématique du comportement des utilisateurs,
 sans tenir compte du contenu des pages, des requêtes formulées,
@@ -739,11 +839,23 @@ ni des préférences individuelles.
 PageRank constitue une base mathématique solide,
 mais les moteurs de recherche modernes l'ont depuis longtemps
 enrichi de nombreuses autres couches de traitement.
-
+ 
 Ce projet aura au moins montré une chose :
-des outils relativement accessibles, tels que les graphes orientés,
-les matrices stochastiques ou encore l'itération de puissance,
-suffisent à traiter un problème d'une complexité réelle, à condition de les combiner avec soin.
+des outils relativement accessibles : graphes orientés, matrices stochastiques,
+itération de puissance ; suffisent à traiter un problème d'une complexité réelle,
+à condition de les combiner avec soin.
+ 
+
+Cependant, même ramenée à $O(m)$ par itération, la mise à l'échelle réelle du Web
+pose des défis considérables. Google indexe aujourd'hui plusieurs centaines de milliards de pages ;
+avec un degré moyen de quelques dizaines de liens par page, $m$ se chiffre en milliers de milliards
+d'opérations par itération, répétées plusieurs fois par jour pour tenir compte des mises à jour du Web.
+Le coût énergétique de ces calculs est loin d'être négligeable,
+et ce constat résonne avec un débat bien plus contemporain :
+l'essor des grands modèles d'intelligence artificielle a placé la question
+du coût énergétique du calcul au cœur de l'actualité.
+Optimiser les algorithmes n'est donc pas seulement une question d'efficacité,
+c'est également une question de sobriété.
 
 
 
@@ -784,7 +896,7 @@ def graph_alea(n, methode="dense"):
     methode="dense"  : matrice n*n binaire uniforme
                        Complexite : O(n^2)
  
-    methode="creux" : chaque noeud a en moyenne log2(n) liens sortants.
+    methode="creux" : chaque noeud a en moyenne log10(n) liens sortants.
                        Retourne une csc_matrix de forme (n, n).
                        Complexite : O(n*log n)
     """
@@ -792,7 +904,7 @@ def graph_alea(n, methode="dense"):
         A= np.random.randint(2, size=(n, n))
  
     else :
-        d       = int(np.log(n))   # degre moyen cible
+        d       = int(np.log10(n))   # degre moyen cible
         p       = d / n             # probabilite binomiale associee
         indptr  = [0]
         indices = []
